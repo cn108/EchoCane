@@ -3931,7 +3931,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "270"
 			(at 313.69 161.29 0)
 			(effects
 				(font
@@ -5791,7 +5791,7 @@
 		(instances
 			(project "EchoCane"
 				(path "/dcfb3bb2-a873-5bd7-9648-2840238e2d2e"
-					(reference "#PWR986")
+					(reference "#PWR540")
 					(unit 1)
 				)
 			)
@@ -5877,7 +5877,7 @@
 		(instances
 			(project "EchoCane"
 				(path "/dcfb3bb2-a873-5bd7-9648-2840238e2d2e"
-					(reference "#PWR698")
+					(reference "#PWR431")
 					(unit 1)
 				)
 			)
@@ -5933,7 +5933,7 @@
 		(instances
 			(project "EchoCane"
 				(path "/dcfb3bb2-a873-5bd7-9648-2840238e2d2e"
-					(reference "#FLG664")
+					(reference "#FLG861")
 					(unit 1)
 				)
 			)

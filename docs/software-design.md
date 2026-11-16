@@ -295,5 +295,6 @@ telemetry buffer/formatting edges. See [testing-strategy.md](testing-strategy.md
 - The mode button has no long-press configuration or persistence across reset.
 - Telemetry is text-only; there is no binary protocol or error-detecting checksum.
 - There is no watchdog reset in this version.
-- The 330 Ω base resistor is sized for the modelled 100 mA motor; motor stall
-  current and worst-case transistor gain remain bench-verification items.
+- The 270 Ω base resistor is sized for the modelled 100 mA motor using the
+  ATmega328P's loaded 4.2 V VOH; motor stall current, actual GPIO VOH and
+  worst-case transistor gain remain bench-verification items.

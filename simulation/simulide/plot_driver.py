@@ -68,6 +68,7 @@ def main() -> int:
             )
 
     plot_rows = sampled[:: max(1, len(sampled) // 450)]
+    collector_peak = max(row[3] for row in rows)
     top1 = TOP
     top2 = TOP + PANEL_H + GAP
     v_low, v_high = 0.0, 6.0
@@ -106,7 +107,7 @@ def main() -> int:
   .diode {{ stroke: #b7791f; }}
 </style>
 <text x="{LEFT}" y="32" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#1a202c">EchoCane motor driver — ngspice transient</text>
-<text x="{LEFT}" y="50" font-family="Arial, sans-serif" font-size="13" fill="#4a5568">20 ms drive pulse, 47 Ω / 10 mH motor model, 330 Ω base resistor. Electrical model only; not tactile validation.</text>
+<text x="{LEFT}" y="50" font-family="Arial, sans-serif" font-size="13" fill="#4a5568">20 ms drive pulse, 47 Ω / 10 mH motor model, 270 Ω base resistor, 4.2 V loaded-GPIO source. Electrical model only; not tactile validation.</text>
 {''.join(ticks)}
 {y_ticks(top1, v_low, v_high, 'V', 0)}
 {y_ticks(top2, i_low, i_high, 'mA', 0)}
@@ -116,7 +117,7 @@ def main() -> int:
 <g class="diode">{polyline(plot_rows, 5, i_low, i_high, top2)}</g>
 <g class="motor">{polyline(plot_rows, 4, i_low, i_high, top2)}</g>
 <line x1="{sx(20):.1f}" y1="{top1}" x2="{sx(20):.1f}" y2="{top2 + PANEL_H}" stroke="#805ad5" stroke-width="1.5" stroke-dasharray="6 4"/>
-<text x="{sx(20) + 8:.1f}" y="{top1 + 18}" font-family="Arial, sans-serif" font-size="12" fill="#553c9a">drive off: flyback clamps collector near 5.77 V</text>
+<text x="{sx(20) + 8:.1f}" y="{top1 + 18}" font-family="Arial, sans-serif" font-size="12" fill="#553c9a">drive off: flyback clamps collector near {collector_peak:.2f} V</text>
 <g font-family="Arial, sans-serif" font-size="13" fill="#1a202c">
   <rect x="{WIDTH - 250}" y="20" width="12" height="3" fill="#c53030"/><text x="{WIDTH - 230}" y="26">Collector voltage (V)</text>
   <rect x="{WIDTH - 250}" y="40" width="12" height="3" fill="#2f855a"/><text x="{WIDTH - 230}" y="46">Motor current (mA)</text>

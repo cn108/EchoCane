@@ -16,8 +16,8 @@ assembled.
 | A1 | Arduino Nano v3.x, ATmega328P, 16 MHz, 5 V | `Module:Arduino_Nano` | Required platform; 5 V logic matches HC-SR04 and 5 V actuator rail |
 | J1 | 1×4, 2.54 mm header | `PinHeader_1x04_P2.54mm_Vertical` | HC-SR04 VCC/TRIG/ECHO/GND |
 | J2 | 1×2, 2.54 mm header | `PinHeader_1x02_P2.54mm_Vertical` | Vibration motor, polarity not critical but documented |
-| Q1 | PN2222A NPN, TO-92 | `TO-92_Inline` | Low-side switch; generous 800 mA collector rating vs ~100 mA load |
-| R1 | 330 Ω, 0.25 W | `R_Axial_DIN0207` | Base current limit; 11.5 mA from a 5 V pin at the conservative Vbe assumption |
+| Q1 | PN2222A NPN, TO-92 | `TO-92_Inline` | Low-side switch; 500 mA class versus the 100 mA design point |
+| R1 | 270 Ω, 0.25 W | `R_Axial_DIN0207` | Base current limit; 11.1 mA from a loaded 4.2 V GPIO, 11.0 mA into the base after R2 |
 | R2 | 10 kΩ, 0.25 W | `R_Axial_DIN0207` | Base pull-down, keeps Q1 off during boot |
 | D1 | 1N4007 | `D_DO-41_SOD81` | Flyback clamp for the inductive motor |
 | C1 | 100 nF ceramic | `C_Disc_D5.0mm_W2.5mm_P5.00mm` | High-frequency motor decoupling |
@@ -39,12 +39,36 @@ ratings, current ratings and a second-source plan.
 
 ### 2.1 Why a BJT, not a MOSFET?
 
-A PN2222A is inexpensive, through-hole and easy to hand-solder. At ~100 mA the
-conservative design calculation gives 11.5 mA of base drive with a 330 Ω
-resistor, well within the Nano's recommended 20 mA continuous pin limit. A
-logic-level MOSFET would be more efficient but is unnecessary at this current and
-adds gate-drive/ESD considerations. The BJT dissipates about 9.8 mW in the
-simulated on-state; the paper calculation uses a conservative 30 mW.
+A PN2222A is inexpensive, through-hole and easy to hand-solder. The corrected
+calculation uses the ATmega328P's guaranteed **VOH ≥ 4.2 V at −20 mA**, not an
+ideal 5 V pin. With a 270 Ω resistor and the 10 kΩ pull-down, the pin sources
+11.1 mA, the pull-down diverts 0.12 mA, and Q1 receives 11.0 mA. At the 100 mA
+design point that is a forced beta of 9.1, inside the conservative target of 10.
+The pin current remains below the recommended 20 mA continuous limit (absolute
+maximum 40 mA). Q1 dissipates about 9.9 mW in the simulated on-state; the paper
+calculation uses a conservative 30 mW.
+
+A 330 Ω resistor is **not** defensible with the loaded pin: it would deliver
+8.97 mA and a forced beta of 11.1 at 100 mA. A 300 Ω resistor is also marginally
+above the calculated loaded limit (about 296 Ω), so 270 Ω is the selected E24
+value.
+
+### 2.2 Driver alternatives considered
+
+| Option | Drive / loss at 100 mA | Assessment |
+|---|---|---|
+| 330 Ω + PN2222A | 8.97 mA base; forced beta 11.1; R1 27.3 mW | **Rejected**: misses the forced-beta-10 target with loaded GPIO and R2 |
+| 300 Ω + PN2222A | 9.88 mA base; forced beta 10.12; R1 30.0 mW | **Rejected**: marginal failure of the same target; no demonstrated benefit over 270 Ω |
+| **270 Ω + PN2222A** | **11.0 mA base; forced beta 9.10; R1 33.3 mW** | **Selected**: fits existing TO-92 footprint and pin budget |
+| IRLZ44N logic-level MOSFET | ≤39 mΩ at 4.5 V gate drive; 0.39 mW at 100 mA; 66 nC max gate charge | Electrically viable, but TO-220 does not fit the TO-92 footprint and the board/gate-drive/ESD changes are not justified for 100 mA |
+
+The MOSFET comparison uses the conservative 39 mΩ maximum specified at VGS = 4 V
+(the 5 V maximum is 28 mΩ); at 4.5 V the guaranteed resistance is therefore no
+worse than 39 mΩ. The IRLZ44N is a 55 V, 47 A TO-220 device with a 1–2 V gate
+threshold. Its gate charge is much larger than the BJT base charge and would need
+a gate resistor and pull-down. The PN2222A remains the appropriate revision-0.1
+choice; the MOSFET is documented as a future alternative, not silently selected
+because it makes a spreadsheet pass.
 
 ## 3. Pin assignment
 
@@ -94,18 +118,24 @@ be a larger safety risk than a tethered prototype.
 
 | Load | Estimate |
 |---|---|
-| Nano quiescent | 20 mA |
+| Nano board allowance | 25 mA |
 | HC-SR04 peak | 15 mA |
-| Vibration motor | 100 mA |
+| Vibration motor (design point) | 100 mA |
+| GPIO/base-drive current through R1 | 11.1 mA |
 | Buzzer | 10 mA |
 | Status LED | 13.6 mA |
-| **Total** | **158.6 mA** |
-| USB 500 mA budget margin | 341.4 mA |
+| **Total design estimate** | **174.7 mA** |
+| USB 500 mA budget margin | 325.3 mA |
 
-These are design estimates, not measurements. A small vibration motor can draw a
-higher stall current; the USB source and traces must be sized for the actual
-motor. The board tracks are 0.5 mm for signals and 0.8 mm for the motor and +5 V
-distribution, which is conservative for ~100 mA.
+The 25 mA Nano allowance covers the ATmega plus the board's USB-serial and power
+LED; it is an estimate, not a measurement. The 11.1 mA is the current sourced by
+D6 through R1; the 0.12 mA through R2 is part of that current, not an additional
+supply load. These are design estimates. **Motor stall current is not verified**
+and may exceed 100 mA; the USB source, connector and 0.8 mm traces must be sized
+for the actual motor. The selected 270 Ω drive supports at most about 110 mA at
+the forced-beta-10 target; a 150 mA stress case would have a forced beta of 13.6
+and is not covered by that target. The board tracks are 0.5 mm for signals and
+0.8 mm for motor and +5 V distribution.
 
 ### 4.2 Decoupling and grounding
 
@@ -275,13 +305,14 @@ it is therefore not included in this revision. See the limitations register.
 
 ## 8. Independent audit corrections
 
-The independent audit changed R1 from 1 kΩ to **330 Ω** after finding that the
-driver-margin check had the forced-beta inequality backwards; details and
-recalculated/SPICE results are in [`audit-report.md`](audit-report.md) and
-[`circuit-explanation.md`](circuit-explanation.md). It also removed the optional
-H5–H6 BOM row, moved C2 to provide body clearance from C1, restored the board
-title/revision metadata, and regenerated every manufacturing and plot output from
-the corrected board. DRC and ERC remained clean after the changes.
+The independent audit first corrected the inverted forced-beta inequality and
+changed R1 from 1 kΩ to 330 Ω. The follow-up margin review found that result still
+assumed an ideal 5 V GPIO and omitted R2. Using the datasheet VOH limit of 4.2 V
+at 20 mA, 330 Ω gives only 8.97 mA and a forced beta of 11.1; 300 Ω is also above
+the loaded 296 Ω limit. **R1 is therefore 270 Ω**, which gives 11.0 mA of base
+current and a forced beta of 9.1. The optional H5–H6 BOM row was removed, C2 was
+moved for mechanical clearance, the board title/revision metadata was restored,
+and every manufacturing/plot output was regenerated. DRC and ERC remained clean.
 
 ## 9. Verification summary
 

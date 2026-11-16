@@ -85,7 +85,7 @@ thresholds and must not be presented as such.
 |---|---|---|
 | HR-01 | Use a classic 5 V Arduino Nano (ATmega328P, 30-pin) as the controller. | PlatformIO target; BOM; schematic |
 | HR-02 | Use the pin map in `Pins.h` consistently across firmware, Wokwi and KiCad. | `tests/validate_hardware.py` |
-| HR-03 | Switch the motor with a PN2222A NPN low-side stage, a 330 Ω base resistor and a 10 kΩ pull-down. | Schematic; ngspice; driver margin check |
+| HR-03 | Switch the motor with a PN2222A NPN low-side stage, a 270 Ω base resistor and a 10 kΩ pull-down, sized against the loaded ATmega328P VOH. | Schematic; ngspice; driver margin check |
 | HR-04 | Include a 1N4007 flyback diode across the motor. | Schematic; ngspice transient |
 | HR-05 | Decouple the motor supply with 100 nF ceramic and 10 µF bulk capacitance. | Schematic; PCB |
 | HR-06 | Expose the HC-SR04 and motor through keyed/clear 2.54 mm headers. | Schematic; PCB |
@@ -177,7 +177,9 @@ set from a failed acquisition.
    500 mA; motor stall current is not characterised.
 2. The HC-SR04 is the common 5 V module with a 2–400 cm nominal range.
 3. The vibration motor is a small 5 V coin/bar motor drawing approximately
-   100 mA at 5 V; this is an estimate, not a datasheet measurement.
+   100 mA at 5 V; this is a design estimate, not a datasheet measurement or a
+   worst-case rating. The selected 270 Ω drive supports about 109.9 mA at the
+   forced-beta-10 target; actual free-run and stall currents are unverified.
 4. The buzzer is a 5 V piezo buzzer; the 100 Ω series resistor limits current
    but the acoustic output is not characterised.
 5. The PCB uses through-hole parts for a hand-solderable prototype.

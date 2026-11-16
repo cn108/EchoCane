@@ -196,20 +196,23 @@ Command (inside a Debian container with `ngspice`):
 ngspice -b -o ngspice-results.txt driver.cir
 ```
 
-Result (47 Ω / 10 mH motor model, generic PN2222A/1N4007 models):
+Result (47 Ω / 10 mH motor model, generic PN2222A/1N4007 models, 4.2 V loaded-GPIO source, 270 Ω and R2):
 
 | Measurement | Result |
-|---|---|
-| Base current, drive high | 12.34 mA |
-| Base-emitter voltage | 0.926 V |
-| Collector-emitter voltage, on | 0.094 V |
-| Motor current, on | 104.4 mA |
-| Collector peak at turn-off | 5.77 V |
-| Flyback diode peak | 104.3 mA |
-| Transistor dissipation | 9.8 mW |
+|---|---:|
+| Drive voltage, loaded | 4.20 V |
+| R1 current, drive high | 12.14 mA |
+| R2 current | 0.092 mA |
+| Base current, drive high | 12.04 mA |
+| Base-emitter voltage | 0.923 V |
+| Collector-emitter voltage, on | 0.0945 V |
+| Motor current, on | 104.37 mA |
+| Collector peak at turn-off | 5.63 V |
+| Flyback diode peak | 104.37 mA |
+| Transistor dissipation | 9.86 mW |
 
-The model includes a 0 V sense source for motor and diode current. It is a
-lumped electrical model, not a motor or tactile validation. See
+The model includes 0 V sense sources for R1, R2, base, motor and diode current.
+It is a lumped electrical model, not a motor or tactile validation. See
 [simulation-limitations.md](simulation-limitations.md).
 
 ## 3. Test design details

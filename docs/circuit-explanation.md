@@ -23,15 +23,19 @@ not include a second regulator or a battery charger.
 
 | Load | Estimate | Basis |
 |---|---|---|
-| Nano | 20 mA | Typical board quiescent current, not measured |
+| Nano board | 25 mA | ATmega plus USB-serial/power-LED allowance; not measured |
 | HC-SR04 | 15 mA | Typical module peak, not measured |
-| Motor | 100 mA | 5 V / 47 Ω design load |
+| Motor | 100 mA | 5 V / 47 Ω design point |
+| Base drive through R1 | 11.1 mA | Loaded 4.2 V GPIO through 270 Ω; D6 source current |
 | Buzzer | 10 mA | Piezo tone current estimate |
 | LED | 13.6 mA | (5 − 2) V / 220 Ω |
-| **Total** | **158.6 mA** | Sum of estimates |
+| **Total** | **174.7 mA** | Sum of design estimates |
 
-A 500 mA USB source leaves 341 mA of headroom. Motor stall current is not known
-and may exceed 100 mA; the source and wiring must be sized for the real motor.
+A 500 mA USB source leaves 325.3 mA of nominal headroom. The 0.12 mA in R2 is
+inside the 11.1 mA R1 current and is not added again. Motor stall current is not
+known and may exceed 100 mA; the source, connector and wiring must be sized for
+the real motor. The drive calculation supports about 110 mA at the
+forced-beta-10 target; a 150 mA stress case is not covered.
 
 ## 2. Ultrasonic sensor interface
 
@@ -62,7 +66,7 @@ shifter would be mandatory.
                                   │
                                   ├── D1 anode; D1 cathode to +5 V
                                   │
-D6 ── R1 330 Ω ── Q1 base          │
+D6 ── R1 270 Ω ── Q1 base          │
                     │             │
                    R2 10 kΩ      Q1 emitter ── GND
                     │
@@ -73,66 +77,103 @@ Q1 is a PN2222A NPN low-side switch. R1 limits base current; R2 keeps the base
 low when D6 is floating or the MCU is resetting. D1 clamps the inductive kick when
 Q1 turns off.
 
-### 3.1 Base current
+### 3.1 Loaded GPIO and base current
 
-Using a conservative saturated base-emitter voltage of 1.2 V:
+The previous calculation used an ideal 5 V GPIO and omitted R2. The ATmega328P
+ datasheet guarantees **VOH ≥ 4.2 V at IOH = −20 mA, VCC = 5 V, over −40 to
++85 °C**. The actual pin current is only about 11 mA, but 4.2 V is used here as a
+conservative DC bound. The datasheet's typical curve is higher at this lower
+current; that is not used for design.
 
-```text
-Ib = (Vdrive − Vbe) / R1
-   = (5.0 − 1.2) / 330
-   = 11.5 mA
-```
-
-The ngspice model, with a Gummel-Poon transistor model, produced:
-
-```text
-Ib = 12.34 mA
-Vbe = 0.926 V
-```
-
-Both are below the ATmega328P's recommended 20 mA continuous current per pin
-(the absolute maximum is 40 mA) and leave margin. The 330 Ω resistor dissipates
-at most:
+With VBE(sat) = 1.2 V (the datasheet maximum at 150 mA / 15 mA, applied
+conservatively at 100 mA) and R1 = 270 Ω:
 
 ```text
-P_R1 = (5.0 − 1.2)² / 330 = 43.8 mW
+I_R1 = (VOH − VBE) / R1
+     = (4.2 − 1.2) / 270
+     = 11.11 mA
+
+I_R2 = VBE / R2
+     = 1.2 / 10,000
+     = 0.120 mA
+
+Ib = I_R1 − I_R2
+   = 11.11 − 0.120
+   = 10.99 mA
+
+V_R1 = VOH − VBE = 3.0 V
+P_R1 = 3.0² / 270 = 33.3 mW
 ```
+
+The R1 current, not the base current, is the D6 source current: **11.11 mA**,
+below the ATmega328P's recommended 20 mA continuous per-pin limit (absolute
+maximum 40 mA). If VBE falls to 0.6 V, the pin current is 13.33 mA and the base
+current is 13.27 mA; the pin still has 6.67 mA of margin to the recommended limit.
+The 0.25 W R1 has at least a 5:1 power margin over the 48 mW worst case.
+
+ngspice, using the same 4.2 V source, 270 Ω and R2, gives 12.14 mA through R1,
+0.092 mA through R2 and 12.04 mA into the base. The simulation's VBE is only
+0.923 V, so its base current is higher than the conservative paper value; that is
+expected, not a contradiction.
 
 ### 3.2 Forced beta and load current
 
 For a 100 mA motor:
 
 ```text
-forced beta = Ic / Ib = 100 mA / 11.5 mA = 8.7
+forced beta = Ic / Ib = 100 mA / 10.99 mA = 9.10
 ```
 
-A forced beta at or below 10 is the conservative target for hard saturation. The
-maximum base resistor for that target is:
+A forced beta at or below 10 is the conservative target for hard saturation. With
+the loaded GPIO and R2 loading, the maximum base resistor is:
 
 ```text
-R1(max) = (5.0 − 1.2) / (100 mA / 10) = 380 Ω
+R1(max) = (4.2 − 1.2) / (100 mA / 10 + 1.2 V / 10 kΩ)
+        = 3.0 / 0.01012
+        = 296.4 Ω
 ```
 
-330 Ω is below the 380 Ω limit, so the design meets its forced-beta target with
-margin. The earlier 1 kΩ value was above the limit; the audit corrected both the
-value and the sign of the design-margin check. If a lower-gain transistor or a
-larger motor were used, R1 should be reduced further and the base current
-recalculated against the Nano pin limit.
+Therefore **270 Ω** is selected. 300 Ω gives 9.88 mA, forced beta 10.12, and is
+above the 296.4 Ω limit; 330 Ω gives 8.97 mA, forced beta 11.15, and is clearly
+outside it. The selected drive would support at most about **109.9 mA** at forced
+beta 10. That is a ceiling of the calculation, not a motor rating. A 150 mA
+stress case gives forced beta 13.6, so the design does not claim coverage of that
+case. **The real motor's free-run and stall currents remain unverified.**
 
-### 3.3 Output stage
+If a lower-gain transistor or a different motor were used, R1 would need to be
+recalculated against both the forced-beta target and the Nano pin limit; simply
+lowering R1 without checking the pin current is not acceptable.
 
-The ngspice transient model uses a 47 Ω / 10 mH motor and a 20 ms drive pulse:
+### 3.3 Transistor versus logic-level MOSFET
+
+The 330 Ω, 300 Ω and 270 Ω BJT cases are compared in
+[`hardware-design.md`](hardware-design.md#22-driver-alternatives-considered). The
+270 Ω BJT is retained because it fits the existing TO-92 footprint and meets the
+loaded-GPIO target. An IRLZ44N TO-220 MOSFET has a conservative 39 mΩ maximum at
+4.5 V gate drive (the 4 V maximum is 39 mΩ; the 5 V maximum is 28 mΩ), so its
+conduction loss at 100 mA is only about 0.39 mW. It is electrically viable, but it
+requires a different footprint, gate resistor and pull-down, and its 66 nC gate
+charge is much larger than the BJT base charge. It is not a drop-in replacement
+for revision 0.1.
+
+### 3.4 Output stage
+
+The ngspice transient model uses a 4.2 V loaded-GPIO source, 270 Ω, R2, a
+47 Ω / 10 mH motor and a 20 ms drive pulse:
 
 | Quantity | Result |
-|---|---|
-| Base current, drive high | 12.34 mA |
-| Base-emitter voltage | 0.926 V |
-| Motor current, on | 104.4 mA |
-| Collector-emitter voltage, on | 0.094 V |
-| Transistor dissipation, on | 9.8 mW |
+|---|---:|
+| Drive voltage, loaded | 4.20 V |
+| R1 current, drive high | 12.14 mA |
+| R2 current | 0.092 mA |
+| Base current, drive high | 12.04 mA |
+| Base-emitter voltage | 0.923 V |
+| Motor current, on | 104.37 mA |
+| Collector-emitter voltage, on | 0.0945 V |
+| Transistor dissipation, on | 9.86 mW |
 | Motor voltage, on | 4.91 V |
-| Collector peak at turn-off | 5.77 V |
-| Flyback diode peak | 104.3 mA |
+| Collector peak at turn-off | 5.63 V |
+| Flyback diode peak | 104.37 mA |
 
 The motor inductance and the 100 mA load are assumptions. A 47 Ω, 10 mH lumped
 model gives an
@@ -144,7 +185,7 @@ electrical time constant of:
 
 so the current reaches its steady value quickly compared with the 20 ms pulse.
 The flyback diode carries the inductor current at turn-off and clamps the
-collector near 5 V plus a diode drop; the simulated peak is 5.77 V. A 1N4007 is
+collector near 5 V plus a diode drop; the simulated peak is 5.63 V. A 1N4007 is
 rated for 1000 V and 1 A, far above this stress. Its relatively slow recovery is
 acceptable for a small motor; a Schottky diode would reduce turn-off loss but is
 not necessary for this prototype.
@@ -235,8 +276,10 @@ The bottom GND zone provides a short return path.
 - The HC-SR04 model does not reproduce acoustic beam width, multipath, soft or
   angled surfaces, or cross-talk.
 - The 5 V USB source, connectors, PCB and assembly have not been physically
-  tested. Motor stall current and starting torque are unknown; the 330 Ω base
-drive is sized for the 100 mA model, not for an arbitrary stall condition.
+    tested. Motor stall current and starting torque are unknown; the 270 Ω base
+  drive is sized for the 100 mA design point, not for an arbitrary stall
+  condition, and its forced-beta-10 ceiling is about 109.9 mA at the assumed
+  loaded GPIO voltage.
 - The calculations use generic transistor/diode models and estimated motor
   parameters.
 

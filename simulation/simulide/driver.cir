@@ -3,7 +3,15 @@
 *
 * VCC -- Rmotor -- Lmotor -- Q1 collector
 * Q1 emitter -- GND, Q1 base -- Rb -- D6 PWM source
-* D1 is the flyback diode across the motor (cathode to VCC).
+* R2 is the 10 kOhm base pull-down. D1 is the flyback diode across the motor
+* (cathode to VCC).
+*
+* The GPIO is deliberately not an ideal 5 V source. Microchip's ATmega328P
+* datasheet guarantees VOH >= 4.2 V at IOH = -20 mA and VCC = 5 V over
+* -40 to +85 C. The actual pin current here is about 11 mA; using 4.2 V at that
+* lower current is conservative. Finite GPIO output resistance is not modelled:
+* the constant 4.2 V source is a DC worst-case approximation, not a datasheet
+* curve fit.
 *
 * The motor is a lumped 47 ohm / 10 mH load, representing about 100 mA at 5 V.
 * Component models are generic first-order models, not manufacturer SPICE
@@ -11,14 +19,24 @@
 
 .option TEMP=25
 
-VCC  vcc 0 DC 5
-VDRIVE drive 0 PULSE(0 5 0 1u 1u 20m 50m)
+.param VOH=4.2
+.param RBASE=270
+.param RPULLDOWN=10k
 
-RB drive base 330
-Q1 collector base 0 QN2222
+VCC  vcc 0 DC 5
+VDRIVE drive 0 PULSE(0 {VOH} 0 1u 1u 20m 50m)
+
+VSENSE_R1 drive r1in 0
+RB r1in base {RBASE}
+VSENSE_R2 base r2top 0
+R2 r2top 0 {RPULLDOWN}
+VSENSE_B base qbase 0
+Q1 collector qbase 0 QN2222
+
 RMOT vcc motor 47
 LMOT motor motor_return 10m
 VSENSE motor_return collector 0
+
 D1 diode_anode vcc D1N4007
 VSENSE_D collector diode_anode 0
 
@@ -31,13 +49,19 @@ VSENSE_D collector diode_anode 0
 .control
 run
 set wr_singlescale
-wrdata driver-waveform.txt v(drive) v(base) v(collector) i(VSENSE) i(VSENSE_D)
-meas tran ib_avg AVG i(VDRIVE) FROM=10m TO=19m
+wrdata driver-waveform.txt v(drive) v(base) v(collector) v(qbase) i(VSENSE) i(VSENSE_D)
+meas tran drive_loaded_avg AVG v(drive) FROM=10m TO=19m
+* Currents are reported with ngspice's element sign; the sign is stated in the
+* results table. A positive i(VSENSE_B) flows into the Q1 base.
+meas tran r1_current_avg AVG i(VSENSE_R1) FROM=10m TO=19m
+meas tran r2_current_avg AVG i(VSENSE_R2) FROM=10m TO=19m
+meas tran ib_avg AVG i(VSENSE_B) FROM=10m TO=19m
 meas tran vbe_avg AVG v(base) FROM=10m TO=19m
 meas tran vce_avg AVG v(collector) FROM=10m TO=19m
 meas tran motor_current_avg AVG i(VCC) FROM=10m TO=19m
+meas tran vcc_avg AVG v(vcc) FROM=10m TO=19m
 meas tran vce_peak MAX v(collector) FROM=19m TO=25m
-meas tran supply_peak MAX i(VCC) FROM=10m TO=19m
+meas tran supply_peak MIN i(VCC) FROM=10m TO=19m
 quit
 .endc
 

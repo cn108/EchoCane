@@ -68,8 +68,8 @@ warning rather than clearing it.
 | Schematic ERC | **PASS** — 0 errors, 0 warnings | `hardware/verification/schematic-erc.rpt` |
 | PCB DRC | **PASS** — 0 DRC violations, 0 unconnected pads, 0 schematic-parity issues | `hardware/verification/pcb-drc.rpt` |
 | Cross-artifact consistency | **PASS** — 12 nets, 19 components, 15 BOM rows, 8 Wokwi links agree | `python tests/validate_hardware.py` |
-| Driver design margins | **PASS** — 330 Ω base resistor, 11.5 mA paper base current, forced beta 8.68 | `simulation/simulide/driver-analysis.json` |
-| ngspice driver simulation | **EXECUTED** — 12.34 mA base, 104.4 mA motor, 0.094 V Vce, 5.77 V flyback clamp | `simulation/simulide/ngspice-results.txt` |
+| Driver design margins | **PASS** — 270 Ω, 4.2 V loaded GPIO, 11.0 mA base, forced beta 9.10 | `simulation/simulide/driver-analysis.json` |
+| ngspice driver simulation | **EXECUTED** — 12.04 mA base, 104.37 mA motor, 0.0945 V Vce, 5.63 V flyback clamp | `simulation/simulide/ngspice-results.txt` |
 | Independent engineering audit | **PASS** for every available check; physical/external checks remain open | [`docs/audit-report.md`](docs/audit-report.md) |
 | Remote GitHub Actions execution | **NOT VERIFIED** — workflows are configured but were not executed remotely here | no remote run claimed |
 | Physical hardware / user validation | **NOT VERIFIED (not performed)** | no hardware available |
@@ -231,7 +231,7 @@ The local build, host tests, ERC and DRC do **not** require a token.
 
 The carrier board is **100 × 85 mm**, 2-layer, 1.6 mm FR-4, designed around the
 classic 30-pin Arduino Nano module. It includes an HC-SR04 4-pin connector, a
-2-pin vibration-motor connector, a PN2222A low-side switch with a 330 Ω base
+2-pin vibration-motor connector, a PN2222A low-side switch with a 270 Ω base
 resistor and 10 kΩ pull-down, a 1N4007 flyback diode, motor supply decoupling, a
 mode button with an RC debounce capacitor, a status LED, a buzzer and four M3
 mounting holes.
@@ -301,13 +301,18 @@ and the Wokwi diagram by `tests/validate_hardware.py`.
 
 An independent audit rechecked the full repository rather than relying on the
 initial status table. It corrected the forced-beta inequality in the driver
-calculation and changed R1 from 1 kΩ to **330 Ω**; removed an unrepresented
-optional H5–H6 BOM row; moved C2 to give the two 5 mm capacitors mechanical
-clearance; restored the board title-block revision; strengthened Wokwi validation
-to assert exact GPIO/stimulus mappings; removed dead configuration; added an
-overflow-safe echo conversion; and expanded the native suite from 18 to 25 tests.
-All generated hardware outputs were regenerated. The full findings, evidence and
-remaining gaps are in [`docs/audit-report.md`](docs/audit-report.md) and
+calculation, changed R1 from 1 kΩ to 330 Ω, then found that the 330 Ω result still
+assumed an ideal 5 V GPIO and omitted the R2 loading. The final loaded-GPIO
+calculation uses the ATmega328P datasheet VOH of 4.2 V at 20 mA, a 270 Ω resistor
+and a 10 kΩ pull-down: 11.11 mA from the pin, 10.99 mA into the base and forced
+beta 9.10 at the 100 mA design point. The 300 Ω case is also above the calculated
+296.4 Ω limit and was rejected. The audit also removed an unrepresented optional
+H5–H6 BOM row; moved C2 to give the two 5 mm capacitors mechanical clearance;
+restored the board title-block revision; strengthened Wokwi validation to assert
+exact GPIO/stimulus mappings; removed dead configuration; added an overflow-safe
+echo conversion; and expanded the native suite from 18 to 25 tests. All generated
+hardware outputs were regenerated. The full findings, evidence and remaining gaps
+are in [`docs/audit-report.md`](docs/audit-report.md) and
 [`docs/limitations-register.md`](docs/limitations-register.md).
 
 ## Engineering limitations
@@ -336,8 +341,12 @@ remaining gaps are in [`docs/audit-report.md`](docs/audit-report.md) and
   CC0 candidate model exists, but it was not independently dimensionally verified
   and is therefore not included; see [`docs/limitations-register.md`](docs/limitations-register.md).
 - **Power.** The design assumes a commercially manufactured regulated 5 V USB
-  source. No lithium-ion charging circuit is designed or validated. Motor stall
-  current can exceed the 100 mA estimate; the source must be sized accordingly.
+  source. No lithium-ion charging circuit is designed or validated. The design
+  budget is 174.7 mA for a 100 mA motor, 25 mA Nano allowance, 15 mA sensor peak,
+  11.1 mA base drive, 10 mA buzzer and 13.6 mA LED, leaving 325.3 mA of nominal
+  USB headroom. Motor stall current is unknown and can exceed the 100 mA design
+  point; the selected drive supports only about 109.9 mA at forced beta 10, so a
+  larger motor requires a new driver/current check.
 
 ## Documentation
 

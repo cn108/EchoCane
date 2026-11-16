@@ -16,22 +16,30 @@ reports did not expose:
    hard saturation needs a **lower** forced beta. The 1 kΩ base resistor was above
    the 380 Ω limit implied by the project’s own forced-beta-10 target. R1 was
    changed to **330 Ω**, and the check now asserts the correct inequality.
-2. The BOM contained an optional `H5-H6` socket-header row that had no schematic
+2. The 330 Ω result was still not defensible: it assumed an ideal 5 V GPIO and
+   omitted the 10 kΩ pull-down. Using the ATmega328P datasheet VOH of **4.2 V at
+   −20 mA**, the loaded limit is **296.4 Ω**; 330 Ω gives forced beta 11.1 and
+   300 Ω gives 10.12. R1 was changed again to **270 Ω**, which gives 11.0 mA of
+   base current and forced beta 9.10 at 100 mA.
+3. The BOM contained an optional `H5-H6` socket-header row that had no schematic
    or PCB representation. It was removed; the design BOM is 15 rows.
-3. C1 and C2 bodies were exactly tangent (two 5 mm bodies with centres 5 mm
+4. C1 and C2 bodies were exactly tangent (two 5 mm bodies with centres 5 mm
    apart). C2 was moved to `(90, 50)` mm and the +5 V stub was rerouted; DRC is
    clean and the render shows mechanical clearance.
-4. Regenerating the PCB from an empty board had dropped the title block. The
+5. Regenerating the PCB from an empty board had dropped the title block. The
    generator now writes title/revision 0.1, and the Gerber job file reports
    revision 0.1.
-5. The firmware test suite did not cover exact release boundaries, recovery to
+6. The firmware test suite did not cover exact release boundaries, recovery to
    clear, millis rollover, echo-conversion overflow or zero-capacity telemetry.
    Seven tests were added; the suite is now **25/25**.
-6. Documentation described the old 1 kΩ design and `raw=Valid`, while the code
+7. Documentation described the old 1 kΩ design and `raw=Valid`, while the code
    emits `raw=OK`; these and other stale values were corrected.
-7. Wokwi validation previously checked that pins existed, not that the exact GPIO
+8. Wokwi validation previously checked that pins existed, not that the exact GPIO
    and per-diagram stimulus were correct. It now asserts the complete wiring and
    expected distance for every diagram.
+9. The power budget omitted the GPIO base-drive current and used 20 mA for the
+   Nano board. The revised estimate is 174.7 mA, leaving 325.3 mA of nominal USB
+   headroom; stall current remains unknown.
 
 **Final local result:** all executed local checks pass. The project is complete as
 a **virtual engineering reconstruction**, but it is not physically validated, the
@@ -66,7 +74,7 @@ finding; it is not hidden by rewriting history.
 |---|---|---|---|---|
 | REP-01 | Missing source files, broken references, duplicate implementations, temporary files or committed credentials | PASS | PASS | `git ls-files`, full file sweep, link check, `.gitignore`; no credentials or temp files found |
 | REP-02 | Optional `H5-H6` BOM row had no schematic/PCB component | FAIL | PASS | Row removed from `generate_schematic.py`; BOM now 15 rows; `validate_hardware.py` passes |
-| FW-01 | Forced-beta check had the inequality backwards; 1 kΩ was above the 380 Ω saturation limit | FAIL | PASS | `driver_analysis.py` corrected; R1 changed to 330 Ω; check passes; ngspice re-run |
+| FW-01 | Forced-beta check had the inequality backwards; 1 kΩ was above the 380 Ω saturation limit | FAIL | PASS | `driver_analysis.py` corrected; R1 1 kΩ → 330 Ω → 270 Ω after loaded-GPIO review; check passes; ngspice re-run |
 | FW-02 | Echo-pulse conversion lacked a portable overflow guard/test | FAIL | PASS | `SensorMath.h` added; `SensorManager` uses it; boundary and full-domain tests pass |
 | FW-03 | Missing tests for exact release boundaries, recovery-to-clear, millis wrap, zero-capacity telemetry | FAIL | PASS | 7 tests added; 25/25 native tests pass |
 | FW-04 | Dead `modeAnnounceMs` configuration and unused `compose()` parameter | FAIL | PASS | Removed; Nano build passes at 10,766 B flash / 777 B RAM |
@@ -74,8 +82,9 @@ finding; it is not hidden by rewriting history.
 | FW-06 | Review of timing, filtering, hysteresis, fault/recovery, debounce, PWM, blocking and startup | PASS | PASS | Code review plus 25 host tests; bounded `pulseIn` documented; no unbounded loop wait |
 | FW-07 | Real sensor timing, temperature and acoustic assumptions | NOT VERIFIED | NOT VERIFIED | No hardware; 343 m/s / 58 µs·cm⁻¹ and 25 ms timeout documented as assumptions |
 | HW-01 | Nano pin assignments, PN2222A EBC, D1/LED/C2 polarity, connector numbering | PASS | PASS | KiCad symbol/pad inspection; netlist/pad map; table below |
-| HW-02 | Base resistor sized for the stated 100 mA load | FAIL | PASS | 330 Ω gives 11.5 mA paper / 12.34 mA ngspice; forced beta 8.7 / 8.5; pin limit respected |
-| HW-03 | Flyback diode polarity and rating | PASS | PASS | 1N4007 cathode to +5 V, anode to collector; 1000 V/1 A vs 5.77 V/104 mA model stress |
+| HW-02 | Base resistor sized for the stated 100 mA load | FAIL | PASS | 270 Ω: 11.11 mA pin current, 0.12 mA R2, 10.99 mA base, forced beta 9.10; ngspice 12.04 mA base, beta 8.66; pin limit respected |
+| HW-08 | 330 Ω result assumed ideal 5 V GPIO and omitted R2; loaded GPIO invalidates it | FAIL | PASS | Datasheet VOH 4.2 V at 20 mA; loaded limit 296.4 Ω; 330 Ω and 300 Ω rejected; 270 Ω selected; loaded model re-run |
+| HW-03 | Flyback diode polarity and rating | PASS | PASS | 1N4007 cathode to +5 V, anode to collector; 1000 V/1 A vs 5.63 V/104.4 mA model stress |
 | HW-04 | Power, decoupling, ground, trace widths and clearances | PASS | PASS | 0.5 mm signal / 0.8 mm motor and +5 V; bottom GND zone; DRC 0; physical current/thermal not measured |
 | HW-05 | C1/C2 body clearance | FAIL | PASS | C2 moved to `(90,50)`; +5 V stub rerouted; DRC 0; 3D render inspected |
 | HW-06 | PCB title block/revision lost during regeneration | FAIL | PASS | Generator sets title, revision 0.1, date and company; Gerber job revision 0.1 |
@@ -233,42 +242,93 @@ footprint pads:
 
 ### 6.2 Driver recalculation
 
-The design target is a 100 mA motor and a conservative forced beta of 10:
+The earlier 330 Ω result is retained as a failure case, not as the design:
+
+| Quantity | Previous ideal-5 V result | Revised loaded-GPIO result |
+|---|---:|---:|
+| GPIO model | 5.0 V ideal | **4.2 V guaranteed VOH at 20 mA** |
+| R2 loading | omitted | 10 kΩ, 0.12 mA at VBE 1.2 V |
+| R1 | 330 Ω | **270 Ω** |
+| R1 / pin current | 11.515 mA | 11.111 mA |
+| Base current | 11.515 mA | **10.991 mA** |
+| Forced beta at 100 mA | 8.68 | **9.10** |
+| Forced-beta-10 R1 limit | 380 Ω (ideal) | **296.4 Ω** |
+| R1 power | 43.8 mW | 33.3 mW |
+| Pin margin to 20 mA | 8.49 mA | 8.89 mA |
+
+The ATmega328P datasheet guarantees VOH ≥ 4.2 V at IOH = −20 mA and VCC = 5 V
+over −40 to +85 °C. The actual pin current is about 11 mA; using 4.2 V rather than
+the higher typical value is conservative. VBE(sat) is assumed to be 1.2 V, the
+PN2222A datasheet maximum at 150 mA / 15 mA, applied at 100 mA. R2 diverts
+0.12 mA from the base node; the GPIO still sources the full 11.11 mA through R1.
 
 ```text
-VBE(sat) assumption       = 1.2 V
-Ib = (5.0 - 1.2) / 330    = 11.5 mA
-forced beta = 100 / 11.5  = 8.7
-R1(max) = (5.0 - 1.2) / (100 mA / 10) = 380 Ω
-P_R1 = (5.0 - 1.2)^2 / 330 = 43.8 mW
+I_R1 = (4.2 - 1.2) / 270       = 11.11 mA
+I_R2 = 1.2 / 10,000             = 0.120 mA
+Ib   = 11.11 - 0.120            = 10.99 mA
+beta = 100 / 10.99              = 9.10
+R1(max) = 3.0 / (0.010 + 0.00012) = 296.4 Ω
+P_R1 = 3.0^2 / 270              = 33.3 mW
 ```
 
-330 Ω is below the 380 Ω limit and the base current is below the ATmega328P's
-recommended 20 mA continuous per-pin limit (absolute maximum 40 mA). The
-ngspice model, using a generic Gummel-Poon transistor, gives:
+Component comparison at the same loaded-GPIO and VBE assumptions:
+
+| R1 | Base current | Forced beta | Max motor at beta 10 | Result |
+|---:|---:|---:|---:|---|
+| 330 Ω | 8.97 mA | 11.15 | 89.7 mA | **rejected** |
+| 300 Ω | 9.88 mA | 10.12 | 98.8 mA | **rejected**: above 296.4 Ω limit |
+| **270 Ω** | **10.99 mA** | **9.10** | **109.9 mA** | **selected** |
+
+At VBE = 0.6 V the pin current is 13.33 mA and the base current is 13.27 mA, so
+the worst-case pin current is still below the recommended 20 mA continuous limit
+(absolute maximum 40 mA). The 0.25 W R1 dissipates 48 mW at that extreme.
+
+**Worst-case motor operating current:** no defensible number can be stated
+without a motor datasheet or stall measurement. The 100 mA figure is a design
+point. The selected drive supports about **109.9 mA** at the forced-beta-10
+target; a 150 mA stress case has forced beta 13.6 and is not covered. Stall is
+`NOT VERIFIED`.
+
+The updated ngspice model uses the same 4.2 V source, 270 Ω and R2. Its lower
+simulated VBE (0.923 V) gives more base current than the conservative paper
+case:
 
 | Quantity | Paper | ngspice |
 |---|---:|---:|
-| Base current | 11.5 mA | 12.34 mA |
-| Vbe | 1.2 V assumed | 0.926 V |
-| Vce, on | 0.3 V assumed | 0.094 V |
-| Motor current | 100 mA assumed | 104.4 mA |
+| Loaded drive voltage | 4.2 V assumed | 4.20 V |
+| R1 current | 11.11 mA | 12.14 mA |
+| R2 current | 0.12 mA | 0.092 mA |
+| Base current | 10.99 mA | 12.04 mA |
+| Vbe | 1.2 V assumed | 0.923 V |
+| Vce, on | 0.3 V assumed | 0.0945 V |
+| Motor current | 100 mA assumed | 104.37 mA |
 | Motor voltage | 4.7 V | 4.91 V |
-| Q1 dissipation | 30 mW conservative | 9.8 mW |
-| Collector peak at turn-off | — | 5.77 V |
-| Diode peak | — | 104.3 mA |
+| Q1 dissipation | 30 mW conservative | 9.86 mW |
+| Collector peak at turn-off | — | 5.63 V |
+| Diode peak | — | 104.37 mA |
 
-The paper values are deliberately conservative; the simulation is consistent
-with them and shows comfortable steady-state stress. The 1N4007 is rated 1000 V
-and 1 A, far above the model's 5.77 V / 104 mA. The model is not a manufacturer
-model and does not prove thermal or EMC behaviour.
+The 1N4007 is rated 1000 V and 1 A, far above the model's 5.63 V / 104.4 mA. The
+model is not a manufacturer model and does not prove thermal or EMC behaviour.
 
 ### 6.3 Power, decoupling and grounding
 
-The estimated budget is 158.6 mA on a 500 mA regulated USB source, leaving
-341.4 mA of nominal headroom. The motor is assumed to be 100 mA at 5 V; **stall
-current is unknown** and can exceed this. The source, connector and 0.8 mm
-+5 V/motor traces must be sized for the real motor before use.
+The revised design estimate is 174.7 mA on a 500 mA regulated USB source, leaving
+325.3 mA of nominal headroom:
+
+| Load | Estimate |
+|---|---:|
+| Nano board allowance | 25 mA |
+| HC-SR04 peak | 15 mA |
+| Motor design point | 100 mA |
+| GPIO/base drive through R1 | 11.1 mA |
+| Buzzer | 10 mA |
+| Status LED | 13.6 mA |
+| **Total** | **174.7 mA** |
+
+The 0.12 mA in R2 is part of the 11.1 mA R1 current and is not counted twice. The
+motor is assumed to be 100 mA at 5 V; **stall current is unknown** and can exceed
+this. The source, connector and 0.8 mm +5 V/motor traces must be sized for the
+real motor before use.
 
 C1 (100 nF) and C2 (10 µF) are near the motor supply. The audit moved C2 from
 `(80,50)` to `(90,50)` mm because the original 5 mm centre spacing made the two
@@ -330,11 +390,13 @@ automation control.
 
 ### 7.2 ngspice
 
-`driver.cir` was run with ngspice-44.2 after changing R1 to 330 Ω. The measured
-values are in the table above. The model includes a 47 Ω / 10 mH motor, generic
-PN2222A Gummel-Poon model, generic 1N4007, 5 V supply and 20 ms pulse. It does not
-model temperature, self-heating, back-EMF, brush noise, supply impedance, PCB
-parasitics or EMC. It is a design check, not a bench measurement.
+`driver.cir` was run with ngspice-44.2 after the loaded-GPIO correction. The
+measured values are in the table above. The model includes a 47 Ω / 10 mH motor,
+generic PN2222A Gummel-Poon model, generic 1N4007, **4.2 V loaded-GPIO source**,
+**270 Ω**, **10 kΩ pull-down** and a 20 ms pulse. The constant 4.2 V source is a
+conservative DC bound, not a fit to the GPIO curve. The model does not include
+temperature, self-heating, back-EMF, brush noise, supply impedance, PCB parasitics
+or EMC. It is a design check, not a bench measurement.
 
 ## 8. PCB manufacturing audit
 
@@ -440,9 +502,11 @@ The architecture is appropriate for an ATmega328P Nano:
   scan intervals of latency but the first sample still warns.
 - Asymmetric hysteresis is appropriate; the 10 cm release band is a demonstration
   choice, not a validated ergonomic value.
-- The 330 Ω base resistor is now consistent with the forced-beta target and the
-  Nano pin limit. A logic-level MOSFET would reduce base current but is not
-  necessary for this prototype.
+- The 270 Ω base resistor is consistent with the loaded-GPIO forced-beta target
+  and the Nano pin limit. The 330 Ω and 300 Ω cases are retained as rejected
+  alternatives. A logic-level IRLZ44N MOSFET is electrically viable at 4.5 V but
+  would require a TO-220 footprint, gate resistor and pull-down; it is not a
+  drop-in replacement for this prototype.
 - The largest remaining firmware improvement is replacing `pulseIn` with timer
   input capture, which would remove the 25 ms blocking window. That would be a
   new implementation and is not included in this audit.
@@ -456,14 +520,14 @@ No unnecessary feature was added. The original modular structure was retained.
 
 | File(s) | Change |
 |---|---|
-| `hardware/generate_schematic.py` | R1 value 1 kΩ → 330 Ω; removed optional H5–H6 BOM row |
+| `hardware/generate_schematic.py` | R1 value 1 kΩ → 330 Ω → **270 Ω**; removed optional H5–H6 BOM row |
 | `hardware/generate_pcb.py` | C2 moved to (90,50), +5 V stub rerouted, C2 reference moved, board title/revision set |
 | `hardware/kicad/*`, `hardware/bom/*`, `hardware/gerber/*`, `hardware/pcb/*`, `hardware/schematic/*` | Regenerated from the corrected generators/netlist |
 | `firmware/lib/echocane_core/include/echocane/AppConfig.h` | Removed unused `modeAnnounceMs` |
 | `firmware/lib/echocane_core/{include,src}/EchoCaneController.*` | Removed unused `compose()` parameter |
 | `firmware/lib/echocane_core/include/echocane/SensorMath.h`, `firmware/src/SensorManager.cpp` | Added overflow-safe portable echo conversion |
 | `firmware/test/test_core/test_core.cpp` | Added 7 edge-case tests; 25 total |
-| `simulation/simulide/driver_analysis.py`, `driver.cir`, `plot_driver.py` | Corrected forced-beta check, R1 330 Ω, regenerated ngspice/waveform |
+| `simulation/simulide/driver_analysis.py`, `driver.cir`, `plot_driver.py` | Corrected forced-beta check; loaded 4.2 V GPIO/R2 model; R1 270 Ω; regenerated ngspice/waveform |
 | `tests/validate_simulation.py` | Exact GPIO/polarity/stimulus validation for all 6 diagrams |
 | `README.md`, `docs/*`, `simulation/**/README.md` | Corrected values, links, audit/limitations register |
 

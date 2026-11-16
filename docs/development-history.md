@@ -334,8 +334,9 @@ DRC: 0 violations, 0 unconnected pads, 0 schematic parity issues
 - Independent review of repository structure, firmware, electrical design,
   Wokwi assets, manufacturing outputs, CI and documentation.
 - Corrected the inverted forced-beta check and changed R1 from 1 kΩ to 330 Ω;
-  regenerated the schematic, netlist, PCB, Gerbers, drill, STEP, plots and 3D
-  renders.
+  then corrected the loaded-GPIO/R2 omission and changed R1 to **270 Ω** using
+  the ATmega328P VOH of 4.2 V at 20 mA. Regenerated the schematic, netlist, PCB,
+  Gerbers, drill, STEP, plots and 3D renders.
 - Removed the optional H5–H6 BOM row that was not represented in the schematic or
   PCB; the BOM is now 15 design rows.
 - Moved C2 to provide mechanical clearance from C1 and rerouted the +5 V stub;
@@ -354,8 +355,10 @@ DRC: 0 violations, 0 unconnected pads, 0 schematic parity issues
 - DRC: PASS, 0 violations, 0 unconnected pads, 0 parity issues.
 - Structural validators: PASS, 6 diagrams with explicit mappings; 12 nets, 19
   components, 15 BOM rows and 8 Wokwi links agree.
-- ngspice: 12.34 mA base, 104.4 mA motor, 0.094 V Vce, 5.77 V clamp, 104.3 mA
-  diode peak.
+- ngspice: 4.20 V loaded drive, 12.04 mA base, 104.37 mA motor, 0.0945 V Vce,
+  5.63 V clamp, 104.37 mA diode peak.
+- Driver paper margins: 11.11 mA pin current, 10.99 mA base, forced beta 9.10,
+  109.9 mA forced-beta-10 ceiling; motor worst case remains unverified.
 - Wokwi execution and remote CI remain unexecuted/not observed.
 
 ## 12. Summary of results
@@ -369,7 +372,7 @@ DRC: 0 violations, 0 unconnected pads, 0 schematic parity issues
 | ERC | PASS, 0/0 |
 | DRC | PASS, 0/0/0 parity |
 | Cross-artifact | PASS |
-| Driver margins | PASS, 330 Ω, forced beta 8.68 |
+| Driver margins | PASS, 270 Ω, forced beta 9.10, 4.2 V loaded GPIO |
 | ngspice | EXECUTED |
 | SimulIDE | NOT EXECUTED (not installed) |
 | Remote GitHub Actions | NOT OBSERVED |

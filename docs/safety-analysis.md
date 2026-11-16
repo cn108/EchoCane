@@ -61,7 +61,7 @@ a formal ISO 14971 or ISO 26262 analysis.
 | H-09 | Buzzer is inaudible in noise or masks important environmental sound | High | Medium | Quiet mode; visual LED; not tested | **High** |
 | H-10 | USB cable causes trip/entanglement or disconnects | Medium | Medium | Tethered prototype only; cable management required; production should use a secured, strain-relieved supply | **Medium** |
 | H-11 | Power loss during use | High | Low | Device stops warning; no backup; user must retain cane skills | **High** |
-| H-12 | Motor stall or overcurrent heats Q1/PCB | Medium | Low | PN2222A 800 mA rating, 0.8 mm tracks, flyback diode; no fuse or current limit | **Medium** |
+| H-12 | Motor stall or overcurrent heats Q1/PCB | Medium | Low | PN2222A 500 mA class, 0.8 mm tracks, flyback diode; no fuse or current limit; 270 Ω drive is sized for 100 mA, not stall | **Medium** |
 | H-13 | Buzzer too loud / uncomfortable | Low | Medium | 100 Ω series resistor; patterns are short; volume not characterised | **Low** |
 | H-14 | Button is pressed accidentally and mode changes | Low | Medium | 30 ms debounce, 100 nF RC, 5 ms polling; no lock | **Low** |
 | H-15 | User over-relies on the device and reduces cane use | Critical | Medium | Explicit warnings in README/docs; supplementary-aid framing; no user deployment | **High** |

@@ -135,7 +135,7 @@ PARTS: list[Part] = [
     Part(
         "R1",
         "Device:R",
-        "330",
+        "270",
         55,
         130,
         "Base current limit resistor",

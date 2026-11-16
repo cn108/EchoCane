@@ -91,8 +91,9 @@ still not a tactile validation.
 
 `simulation/simulide/driver.cir` models:
 
-- a 5 V supply,
-- a 330 Ω base resistor,
+- a 5 V motor supply and a **4.2 V loaded-GPIO PWM source** (the datasheet VOH
+  minimum at 20 mA, used conservatively at the actual ~12 mA),
+- a 270 Ω base resistor and a 10 kΩ base pull-down,
 - a generic Gummel-Poon PN2222A,
 - a 47 Ω / 10 mH motor,
 - a generic 1N4007 flyback diode,
@@ -101,14 +102,17 @@ still not a tactile validation.
 Results:
 
 | Quantity | Result |
-|---|---|
-| Base current | 12.34 mA |
-| Vbe | 0.926 V |
-| Vce, on | 0.094 V |
-| Motor current, on | 104.4 mA |
-| Vce peak at turn-off | 5.77 V |
-| Diode peak | 104.3 mA |
-| Q1 dissipation | 9.8 mW |
+|---|---:|
+| Loaded GPIO voltage | 4.20 V |
+| R1 current | 12.14 mA |
+| R2 current | 0.092 mA |
+| Base current | 12.04 mA |
+| Vbe | 0.923 V |
+| Vce, on | 0.0945 V |
+| Motor current, on | 104.37 mA |
+| Vce peak at turn-off | 5.63 V |
+| Diode peak | 104.37 mA |
+| Q1 dissipation | 9.86 mW |
 
 ### 4.1 Model limitations
 

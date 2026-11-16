@@ -1,19 +1,119 @@
 {
   "assumptions": {
     "vcc_V": 5.0,
+    "voh_min_V": 4.2,
+    "voh_test_current_mA": 20.0,
     "vbe_sat_V": 1.2,
+    "vbe_low_V": 0.6,
     "vce_sat_V": 0.3,
-    "motor_current_A": 0.1,
-    "rbase_ohm": 330.0,
-    "forced_beta_target": 10.0
+    "motor_design_current_A": 0.1,
+    "motor_stress_current_A": 0.15,
+    "rbase_selected_ohm": 270.0,
+    "rbase_pulldown_ohm": 10000.0,
+    "forced_beta_target": 10.0,
+    "nano_recommended_pin_mA": 20.0,
+    "nano_absolute_pin_mA": 40.0
   },
-  "base_drive": {
+  "previous_ideal_calculation": {
+    "vdrive_V": 5.0,
+    "rbase_ohm": 330.0,
     "base_current_mA": 11.515,
-    "forced_beta": 8.68,
-    "max_base_resistor_for_target_ohm": 380.0,
-    "base_resistor_power_mW": 43.758,
-    "nano_pin_limit_mA": 20.0,
-    "pin_current_margin_mA": 8.485
+    "forced_beta": 8.684,
+    "r1_power_mW": 43.758,
+    "note": "Earlier paper result. It is not a valid loaded-GPIO result because it uses an ideal 5 V pin and omits the R2 pull-down."
+  },
+  "selected_base_drive": {
+    "rbase_ohm": 270.0,
+    "vdrive_V": 4.2,
+    "vbe_V": 1.2,
+    "r1_current_mA": 11.111,
+    "r2_current_mA": 0.12,
+    "base_current_mA": 10.991,
+    "forced_beta": 9.098,
+    "max_motor_current_mA": 109.911,
+    "r1_power_mW": 33.333,
+    "pin_current_mA": 11.111,
+    "pin_margin_mA": 8.889,
+    "passes_forced_beta": true,
+    "passes_pin_limit": true
+  },
+  "r1_saturation_limit_ohm": 296.44,
+  "r1_options": [
+    {
+      "rbase_ohm": 330.0,
+      "vdrive_V": 4.2,
+      "vbe_V": 1.2,
+      "r1_current_mA": 9.091,
+      "r2_current_mA": 0.12,
+      "base_current_mA": 8.971,
+      "forced_beta": 11.147,
+      "max_motor_current_mA": 89.709,
+      "r1_power_mW": 27.273,
+      "pin_current_mA": 9.091,
+      "pin_margin_mA": 10.909,
+      "passes_forced_beta": false,
+      "passes_pin_limit": true
+    },
+    {
+      "rbase_ohm": 300.0,
+      "vdrive_V": 4.2,
+      "vbe_V": 1.2,
+      "r1_current_mA": 10.0,
+      "r2_current_mA": 0.12,
+      "base_current_mA": 9.88,
+      "forced_beta": 10.121,
+      "max_motor_current_mA": 98.8,
+      "r1_power_mW": 30.0,
+      "pin_current_mA": 10.0,
+      "pin_margin_mA": 10.0,
+      "passes_forced_beta": false,
+      "passes_pin_limit": true
+    },
+    {
+      "rbase_ohm": 270.0,
+      "vdrive_V": 4.2,
+      "vbe_V": 1.2,
+      "r1_current_mA": 11.111,
+      "r2_current_mA": 0.12,
+      "base_current_mA": 10.991,
+      "forced_beta": 9.098,
+      "max_motor_current_mA": 109.911,
+      "r1_power_mW": 33.333,
+      "pin_current_mA": 11.111,
+      "pin_margin_mA": 8.889,
+      "passes_forced_beta": true,
+      "passes_pin_limit": true
+    }
+  ],
+  "worst_case_pin_current": {
+    "rbase_ohm": 270.0,
+    "vdrive_V": 4.2,
+    "vbe_V": 0.6,
+    "r1_current_mA": 13.333,
+    "r2_current_mA": 0.06,
+    "base_current_mA": 13.273,
+    "forced_beta": 7.534,
+    "max_motor_current_mA": 132.733,
+    "r1_power_mW": 48.0,
+    "pin_current_mA": 13.333,
+    "pin_margin_mA": 6.667,
+    "passes_forced_beta": true,
+    "passes_pin_limit": true
+  },
+  "motor_stress_case": {
+    "rbase_ohm": 270.0,
+    "vdrive_V": 4.2,
+    "vbe_V": 1.2,
+    "r1_current_mA": 11.111,
+    "r2_current_mA": 0.12,
+    "base_current_mA": 10.991,
+    "forced_beta": 13.647,
+    "max_motor_current_mA": 109.911,
+    "r1_power_mW": 33.333,
+    "pin_current_mA": 11.111,
+    "pin_margin_mA": 8.889,
+    "passes_forced_beta": false,
+    "passes_pin_limit": true
   },
   "output_stage": {
     "motor_voltage_V": 4.7,
@@ -21,30 +121,59 @@
     "flyback_diode": "1N4007, cathode to +5V, anode to collector"
   },
   "status_led": {
-    "current_mA": 13.64,
-    "resistor_power_mW": 40.91,
+    "current_mA": 13.636,
+    "resistor_power_mW": 40.909,
     "nano_pin_limit_mA": 20.0
   },
-  "button": {
-    "rc_time_constant_ms": 3.0,
-    "firmware_debounce_ms": 30
-  },
   "power_budget": {
-    "nano_quiescent_mA": 20,
-    "hc_sr04_peak_mA": 15,
-    "motor_mA": 100.0,
-    "buzzer_mA": 10,
-    "status_led_mA": 13.64,
-    "total_mA": 158.64
+    "nano_board_mA": 25.0,
+    "hc_sr04_peak_mA": 15.0,
+    "motor_design_mA": 100.0,
+    "base_drive_mA": 11.111,
+    "buzzer_mA": 10.0,
+    "status_led_mA": 13.636,
+    "total_mA": 174.747
   },
-  "usb_budget_margin_mA": 341.4,
+  "usb_budget_margin_mA": 325.253,
+  "motor_current_status": {
+    "design_mA": 100.0,
+    "stress_case_mA": 150.0,
+    "stress_forced_beta": 13.647,
+    "worst_case": "NOT VERIFIED - no motor datasheet or stall measurement",
+    "note": "100 mA is a design assumption, not a motor maximum. The selected drive supports up to the calculated forced-beta ceiling; a real motor's free-run and stall currents must be measured before claiming coverage."
+  },
+  "mosfet_comparison": {
+    "part": "IRLZ44N",
+    "package": "TO-220",
+    "vds_V": 55,
+    "id_A": 47,
+    "rds_on_4v_max_ohm": 0.039,
+    "rds_on_5v_max_ohm": 0.028,
+    "rds_on_4v5_conservative_ohm": 0.039,
+    "vgs_threshold_max_V": 2.0,
+    "qg_max_nC": 66.0,
+    "dissipation_at_100mA_mW": 0.39,
+    "dissipation_at_150mA_mW": 0.877,
+    "average_gate_charge_current_uA": 64.456,
+    "selection": "NOT SELECTED for revision 0.1",
+    "reason": "It meets the 4.5 V gate-drive requirement with a conservative 39 mOhm bound and has very low conduction loss, but it is a TO-220 part that does not fit the existing TO-92 footprint; the added board area, gate charge and ESD handling are not justified for a 100 mA design point when a 270 ohm base resistor already meets the target."
+  },
   "checks": {
-    "base_current_within_nano_pin": true,
-    "forced_beta_at_most_10": true,
-    "base_resistor_within_saturation_limit": true,
-    "base_resistor_at_least_220_ohm": true,
-    "led_current_within_nano_pin": true,
+    "selected_forced_beta_at_most_10": true,
+    "selected_r1_within_nano_recommended_pin": true,
+    "selected_r1_power_within_0p25W": true,
+    "selected_motor_design_within_beta_ceiling": true,
+    "worst_case_pin_within_nano_recommended_pin": true,
+    "r1_saturation_limit_is_at_least_selected": true,
     "power_budget_within_usb": true,
-    "pulldown_does_not_load_base": true
-  }
+    "pulldown_does_not_dominate_base": true,
+    "mosfet_has_conservative_4v5_bound": true,
+    "mosfet_gate_peak_with_330_ohm_within_pin": true
+  },
+  "not_verified": [
+    "motor free-run, stall, starting and worst-case operating current",
+    "transistor and diode behaviour at temperature extremes",
+    "GPIO VOH at the actual load and temperature",
+    "PCB thermal rise, connector drop and USB-source sag"
+  ]
 }
