@@ -1,0 +1,32 @@
+# PlatformIO build products and local tool state
+.pio/
+.venv/
+.freebuff/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Test and simulation outputs
+test-results/
+*.log
+simulation/simulide/driver-waveform.txt
+
+# KiCad local/user state
+*.kicad_prl
+*.kicad_prl.lock
+*.bak
+*-backups/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Secrets — never commit Wokwi or other tokens
+.env
+.env.*
+!.env.example
