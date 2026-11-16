@@ -2,7 +2,7 @@
 	(version "E")
 	(design
 		(source "/work/hardware/kicad/EchoCane.kicad_sch")
-		(date "2026-11-16T00:54:07")
+		(date "2026-11-16T01:24:30")
 		(tool "Eeschema 10.0.8")
 		(sheet
 			(number "1")

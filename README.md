@@ -252,6 +252,10 @@ mounting holes.
 
 ![Schematic](images/EchoCane-schematic.png)
 
+The schematic is drawn as labelled functional blocks with visible local wiring;
+global labels are used only for the long Nano-to-peripheral signal runs. It is
+an editable KiCad schematic, not only an image or PDF.
+
 The board has not been fabricated, assembled or electrically tested. Gerbers are
 design outputs, not manufacturing approval.
 

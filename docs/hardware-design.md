@@ -9,6 +9,12 @@ assembled.
 
 ![Schematic](../images/EchoCane-schematic.png)
 
+The A3 schematic is organised into labelled functional sections. Local circuit
+connections are drawn as orthogonal KiCad wires; global labels are reserved for
+the long Nano-to-peripheral signal runs and for net-name continuity. The mode
+input note records the firmware's internal pull-up (`INPUT_PULLUP`), with SW1
+closing to GND and C3 providing the 100 nF debounce capacitance.
+
 ## 2. Component selection
 
 | Ref | Part / value | Footprint | Why |
@@ -164,9 +170,13 @@ The schematic is organised into labelled functional blocks:
 8. **Power entry** — explicit +5 V and GND symbols and a GND `PWR_FLAG`.
 9. **Mechanical** — H1–H4, excluded from the BOM.
 
-Net labels are **global labels** so the same names connect across the sheet and
-match the PCB netlist. The Nano's two adjacent GND pins are joined to one label
-to keep the drawing readable.
+Local block connections are drawn as visible orthogonal wires: the motor base
+network, collector/emitter return, flyback diode, button/capacitor parallel
+network, LED series path, buzzer path, connector power stubs and Nano ground
+pins all have explicit copper-style wires and junctions. Global labels connect
+only the long Nano-to-peripheral signal runs, so the same net names connect
+across the sheet and match the PCB netlist. The Nano's two adjacent GND pins are
+joined with wires to one GND symbol.
 
 ### 5.1 ERC result
 

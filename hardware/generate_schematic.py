@@ -6,9 +6,10 @@ Run inside the KiCad container so the system symbol libraries are available:
   docker run --rm -v "$PWD:/work" -w /work kicad/kicad:10.0 \
       python3 hardware/generate_schematic.py
 
-The generator embeds only the symbols it uses, attaches every used pin to a
-short wire stub with a net label (or a power symbol), and places no-connect
-flags on unused Nano pins. KiCad ERC remains the authority on connectivity.
+The generator embeds only the symbols it uses. Peripheral blocks are drawn with
+visible orthogonal wiring; global labels are used only for the long Nano-to-block
+signals and for net-name preservation. KiCad ERC remains the authority on
+connectivity.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ SYMBOL_ROOT = Path("/usr/share/kicad/symbols")
 PROJECT = "EchoCane"
 ROOT_UUID = str(uuid.uuid5(uuid.NAMESPACE_URL, "echocane/root-sheet"))
 PAPER = "A3"
+POWER_INDEX = 0
 
 # Child symbol -> (library, parent symbol). The parent is embedded under the
 # child name because KiCad's derived-symbol syntax is awkward in a standalone
@@ -240,37 +242,37 @@ PARTS: list[Part] = [
 
 
 LAYOUT = {
-    "A1": (210, 150),
-    "J1": (55, 80),
-    "J2": (55, 125),
-    "Q1": (350, 160),
-    "R1": (310, 160),
-    "R2": (330, 185),
-    "D1": (365, 140),
-    "C1": (315, 220),
-    "C2": (335, 220),
-    "SW1": (70, 180),
-    "C3": (95, 200),
-    "R3": (70, 230),
-    "D2": (95, 245),
-    "R4": (320, 80),
-    "BZ1": (360, 80),
-    "H1": (250, 250),
-    "H2": (270, 250),
-    "H3": (250, 270),
-    "H4": (270, 270),
+    "A1": (245, 150),
+    "J1": (55, 60),
+    "J2": (205, 125),
+    "Q1": (180, 170),
+    "R1": (140, 165),
+    "R2": (155, 185),
+    "D1": (170, 150),
+    "C1": (330, 180),
+    "C2": (350, 180),
+    "SW1": (55, 120),
+    "C3": (85, 130),
+    "R3": (105, 190),
+    "D2": (80, 190),
+    "R4": (140, 80),
+    "BZ1": (190, 80),
+    "H1": (330, 240),
+    "H2": (350, 240),
+    "H3": (330, 260),
+    "H4": (350, 260),
 }
 
 HEADINGS = [
-    ("ULTRASONIC SENSOR", 30, 60),
-    ("MODE INPUT", 30, 160),
-    ("STATUS LED", 30, 215),
-    ("MOTOR DRIVER", 290, 120),
-    ("AUDIO WARNING", 300, 60),
-    ("SUPPLY DECOUPLING", 290, 205),
-    ("ARDUINO NANO", 170, 110),
-    ("POWER ENTRY", 240, 215),
-    ("MECHANICAL", 240, 240),
+    ("ULTRASONIC SENSOR", 30, 42),
+    ("MODE INPUT", 30, 102),
+    ("STATUS LED", 30, 170),
+    ("MOTOR DRIVER", 120, 135),
+    ("AUDIO WARNING", 120, 42),
+    ("ARDUINO NANO", 220, 105),
+    ("POWER ENTRY", 315, 48),
+    ("SUPPLY DECOUPLING", 315, 160),
+    ("MECHANICAL", 315, 220),
 ]
 
 def uid(*parts: object) -> str:
@@ -442,6 +444,19 @@ def heading(text: str, x: float, y: float) -> str:
 \t)"""
 
 
+def note(text: str, x: float, y: float, tag: str) -> str:
+    return f"""\t(text "{esc(text)}"
+\t\t(at {fmt(x)} {fmt(y)} 0)
+\t\t(effects
+\t\t\t(font
+\t\t\t\t(size 1.5 1.5)
+\t\t\t)
+\t\t\t(justify left bottom)
+\t\t)
+\t\t(uuid "{uid('note', tag)}")
+\t)"""
+
+
 def no_connect(x: float, y: float, tag: str) -> str:
     return f"""\t(no_connect
 \t\t(at {fmt(x)} {fmt(y)})
@@ -450,7 +465,11 @@ def no_connect(x: float, y: float, tag: str) -> str:
 
 
 def power_symbol(lib_id: str, x: float, y: float, tag: str) -> str:
+    global POWER_INDEX
+    POWER_INDEX += 1
     ref_prefix = "#PWR" if lib_id != "power:PWR_FLAG" else "#FLG"
+    reference = f"{ref_prefix}{POWER_INDEX:03d}"
+    value_y = y - 3.81 if lib_id == "power:+5V" else y + 3.81
     return f"""\t(symbol
 \t\t(lib_id "{lib_id}")
 \t\t(at {fmt(x)} {fmt(y)} 0)
@@ -460,7 +479,7 @@ def power_symbol(lib_id: str, x: float, y: float, tag: str) -> str:
 \t\t(on_board no)
 \t\t(dnp no)
 \t\t(uuid "{uid('power', tag)}")
-\t\t(property "Reference" "{ref_prefix}"
+\t\t(property "Reference" "{reference}"
 \t\t\t(at {fmt(x)} {fmt(y - 2.54)} 0)
 \t\t\t(effects
 \t\t\t\t(font
@@ -470,7 +489,7 @@ def power_symbol(lib_id: str, x: float, y: float, tag: str) -> str:
 \t\t\t)
 \t\t)
 \t\t(property "Value" "{lib_id.split(':', 1)[1]}"
-\t\t\t(at {fmt(x)} {fmt(y + 3.81)} 0)
+\t\t\t(at {fmt(x)} {fmt(value_y)} 0)
 \t\t\t(effects
 \t\t\t\t(font
 \t\t\t\t\t(size 1.27 1.27)
@@ -501,7 +520,7 @@ def power_symbol(lib_id: str, x: float, y: float, tag: str) -> str:
 \t\t(instances
 \t\t\t(project "{PROJECT}"
 \t\t\t\t(path "/{ROOT_UUID}"
-\t\t\t\t\t(reference "{ref_prefix}{abs(hash(tag)) % 1000}")
+\t\t\t\t\t(reference "{reference}")
 \t\t\t\t\t(unit 1)
 \t\t\t\t)
 \t\t\t)
@@ -610,47 +629,192 @@ def generate() -> None:
         part.x = snap(part.x)
         part.y = snap(part.y)
         body.append(symbol_instance(part))
-        for number, net in part.nets.items():
-            if net is None:
-                continue
-            x, y, angle = pin_position(part, number)
-            dx, dy = outward(angle)
-            ex, ey = x + dx * 3.81, y + dy * 3.81
-            body.append(wire(x, y, ex, ey, f"{part.ref}:{number}"))
-            if part.ref == "A1" and number in ("4", "29"):
-                continue
-            body.append(label(net, ex, ey, f"{part.ref}:{number}", dx))
 
-        # Every unused Nano pin gets an explicit no-connect marker.
-        if part.ref == "A1":
-            for number in SYMBOL_PINS[part.symbol]:
-                if number not in part.nets:
-                    x, y, _ = pin_position(part, number)
-                    body.append(no_connect(x, y, f"A1:{number}"))
+    by_ref = {part.ref: part for part in PARTS}
 
-    # The Nano has two adjacent ground pins. Join them to one label so the
-    # schematic remains readable; this is electrically the same GND net.
-    a1 = next(part for part in PARTS if part.ref == "A1")
-    g1 = pin_position(a1, "4")
-    g2 = pin_position(a1, "29")
-    gy = snap(g1[1] + 3.81)
-    body.append(wire(g1[0], g1[1], g1[0], gy, "A1:4:gnd"))
-    body.append(wire(g1[0], gy, g2[0], gy, "A1:gnd:link"))
-    body.append(wire(g2[0], g2[1], g2[0], gy, "A1:29:gnd"))
-    body.append(label("GND", g2[0], gy, "A1:gnd", 1.0))
+    def pin(ref: str, number: str) -> tuple[float, float]:
+        x, y, _ = pin_position(by_ref[ref], number)
+        return x, y
+
+    def add_path(points: list[tuple[float, float]], tag: str) -> None:
+        for index, (a, b) in enumerate(zip(points, points[1:])):
+            body.append(wire(a[0], a[1], b[0], b[1], f"{tag}:{index}"))
+
+    def add_junction(x: float, y: float, tag: str) -> None:
+        body.append(
+            f"""\t(junction
+\t\t(at {fmt(x)} {fmt(y)})
+\t\t(diameter 0)
+\t\t(color 0 0 0 0)
+\t\t(uuid "{uid('junction', tag)}")
+\t)"""
+        )
+
+    def add_power(lib_id: str, x: float, y: float, dx: float, dy: float, tag: str) -> None:
+        ex, ey = snap(x + dx), snap(y + dy)
+        body.append(wire(x, y, ex, ey, f"{tag}:wire"))
+        body.append(power_symbol(lib_id, ex, ey, f"{tag}:symbol"))
+
+    def add_label(name: str, x: float, y: float, tag: str, dx: float = 1.0) -> None:
+        body.append(label(name, x, y, tag, dx))
+
+    # ------------------------------------------------------------------
+    # Arduino Nano: signal labels on the left edge, supply pins top/bottom.
+    # ------------------------------------------------------------------
+    nano_signals = {
+        "5": "BUTTON",
+        "9": "HAPTIC_PWM",
+        "10": "LED_CMD",
+        "11": "BUZZER_CMD",
+        "12": "US_TRIG",
+        "13": "US_ECHO",
+    }
+    for number, net in nano_signals.items():
+        x, y = pin("A1", number)
+        ex = snap(x - 3.81)
+        body.append(wire(x, y, ex, y, f"A1:{number}:stub"))
+        add_label(net, ex, y, f"A1:{number}", -1.0)
+
+    # Join the two Nano ground pins visibly, then attach one GND symbol.
+    g4x, g4y = pin("A1", "4")
+    g29x, g29y = pin("A1", "29")
+    gy = snap(g4y + 3.81)
+    add_path([(g4x, g4y), (g4x, gy), (g29x, gy)], "A1:gnd")
+    body.append(wire(g29x, g29y, g29x, gy, "A1:29:gnd"))
+    add_junction(g29x, gy, "A1:gnd")
+    add_power("power:GND", g29x, gy, 0, 3.81, "A1:gnd")
+
+    # +5 V pin is on the Nano's top edge.
+    p5x, p5y = pin("A1", "27")
+    add_path([(p5x, p5y), (p5x, snap(p5y - 9.53))], "A1:5v")
+    body.append(power_symbol("power:+5V", p5x, snap(p5y - 9.53), "A1:5v:symbol"))
+
+    # ------------------------------------------------------------------
+    # Ultrasonic connector J1.
+    # ------------------------------------------------------------------
+    j1_1 = pin("J1", "1")
+    j1_2 = pin("J1", "2")
+    j1_3 = pin("J1", "3")
+    j1_4 = pin("J1", "4")
+    add_path([j1_1, (snap(j1_1[0] - 7.62), j1_1[1]), (snap(j1_1[0] - 7.62), snap(j1_1[1] - 5.08))], "J1:1")
+    body.append(power_symbol("power:+5V", snap(j1_1[0] - 7.62), snap(j1_1[1] - 5.08), "J1:1:symbol"))
+    body.append(wire(*j1_2, snap(j1_2[0] - 5.08), j1_2[1], "J1:2:stub"))
+    add_label("US_TRIG", snap(j1_2[0] - 5.08), j1_2[1], "J1:2", -1.0)
+    body.append(wire(*j1_3, snap(j1_3[0] - 5.08), j1_3[1], "J1:3:stub"))
+    add_label("US_ECHO", snap(j1_3[0] - 5.08), j1_3[1], "J1:3", -1.0)
+    add_path([j1_4, (snap(j1_4[0] - 7.62), j1_4[1]), (snap(j1_4[0] - 7.62), snap(j1_4[1] + 5.08))], "J1:4")
+    body.append(power_symbol("power:GND", snap(j1_4[0] - 7.62), snap(j1_4[1] + 5.08), "J1:4:symbol"))
+
+    # ------------------------------------------------------------------
+    # Mode button and its hardware debounce capacitor.
+    # ------------------------------------------------------------------
+    sw1_1 = pin("SW1", "1")
+    sw1_2 = pin("SW1", "2")
+    c3_1 = pin("C3", "1")
+    c3_2 = pin("C3", "2")
+    add_path([sw1_1, (sw1_1[0], c3_1[1]), c3_1], "SW1:1")
+    add_label("BUTTON", *sw1_1, "SW1:1", -1.0)
+    add_path([sw1_2, (sw1_2[0], c3_2[1]), c3_2], "SW1:2")
+    body.append(wire(c3_2[0], c3_2[1], c3_2[0], snap(c3_2[1] + 5.08), "C3:2:gnd"))
+    add_junction(c3_2[0], c3_2[1], "SW1:2")
+    body.append(power_symbol("power:GND", c3_2[0], snap(c3_2[1] + 5.08), "C3:2:gnd:symbol"))
+
+    # ------------------------------------------------------------------
+    # Status LED: D7 -> R3 -> LED anode; LED cathode -> GND.
+    # ------------------------------------------------------------------
+    r3_1 = pin("R3", "1")
+    r3_2 = pin("R3", "2")
+    d2_1 = pin("D2", "1")
+    d2_2 = pin("D2", "2")
+    body.append(wire(r3_1[0], r3_1[1], r3_1[0], snap(r3_1[1] - 5.08), "R3:1:stub"))
+    add_label("LED_CMD", r3_1[0], snap(r3_1[1] - 5.08), "R3:1", 1.0)
+    add_path([r3_2, (snap(r3_2[0] - 15.24), r3_2[1]), (snap(r3_2[0] - 15.24), d2_2[1])], "R3:2")
+    body.append(wire(snap(r3_2[0] - 15.24), r3_2[1], snap(r3_2[0] - 15.24), snap(r3_2[1] + 5.08), "R3:2:label"))
+    add_junction(snap(r3_2[0] - 15.24), r3_2[1], "LED_A")
+    add_label("LED_A", snap(r3_2[0] - 15.24), snap(r3_2[1] + 5.08), "R3:2", -1.0)
+    body.append(wire(snap(r3_2[0] - 15.24), d2_2[1], d2_2[0], d2_2[1], "R3:2:led"))
+    body.append(wire(d2_1[0], d2_1[1], snap(d2_1[0] - 5.08), d2_1[1], "D2:1:gnd"))
+    body.append(power_symbol("power:GND", snap(d2_1[0] - 5.08), d2_1[1], "D2:1:gnd:symbol"))
+
+    # ------------------------------------------------------------------
+    # Motor driver: base resistor, pull-down, NPN switch, flyback diode.
+    # ------------------------------------------------------------------
+    r1_1 = pin("R1", "1")
+    r1_2 = pin("R1", "2")
+    q_b = pin("Q1", "2")
+    q_c = pin("Q1", "3")
+    q_e = pin("Q1", "1")
+    r2_1 = pin("R2", "1")
+    r2_2 = pin("R2", "2")
+    j2_1 = pin("J2", "1")
+    j2_2 = pin("J2", "2")
+    d1_1 = pin("D1", "1")
+    d1_2 = pin("D1", "2")
+
+    add_label("HAPTIC_PWM", *r1_1, "R1:1", -1.0)
+    add_path([r1_2, (r1_2[0], q_b[1]), q_b], "R1:2:base")
+    body.append(wire(r2_1[0], q_b[1], r2_1[0], r2_1[1], "R2:1:base"))
+    add_junction(r2_1[0], q_b[1], "Q_BASE")
+    add_label("Q_BASE", r1_2[0], q_b[1], "Q_BASE", -1.0)
+
+    body.append(wire(r2_2[0], r2_2[1], r2_2[0], snap(r2_2[1] + 5.08), "R2:2:gnd"))
+    body.append(power_symbol("power:GND", r2_2[0], snap(r2_2[1] + 5.08), "R2:2:gnd:symbol"))
+    body.append(wire(q_e[0], q_e[1], q_e[0], snap(q_e[1] + 5.08), "Q1:1:gnd"))
+    body.append(power_symbol("power:GND", q_e[0], snap(q_e[1] + 5.08), "Q1:1:gnd:symbol"))
+
+    add_power("power:+5V", *j2_1, -5.08, 0, "J2:1")
+    add_path([j2_2, (snap(j2_2[0] - 10.16), j2_2[1]), (snap(j2_2[0] - 10.16), q_c[1]), q_c], "J2:2:motor")
+    add_label("MOTOR_NEG", snap(j2_2[0] - 10.16), j2_2[1], "J2:2", -1.0)
+    body.append(wire(d1_2[0], d1_2[1], snap(j2_2[0] - 10.16), d1_2[1], "D1:2:motor"))
+    add_junction(snap(j2_2[0] - 10.16), d1_2[1], "MOTOR_NEG")
+    add_power("power:+5V", *d1_1, -5.08, 0, "D1:1")
+
+    # Motor-supply decoupling.
+    for ref in ("C1", "C2"):
+        c1 = pin(ref, "1")
+        c2 = pin(ref, "2")
+        add_power("power:+5V", *c1, 0, -6.35, f"{ref}:1")
+        add_power("power:GND", *c2, 0, 6.35, f"{ref}:2")
+
+    # ------------------------------------------------------------------
+    # Audio warning: D8 -> R4 -> buzzer; buzzer return -> GND.
+    # ------------------------------------------------------------------
+    r4_1 = pin("R4", "1")
+    r4_2 = pin("R4", "2")
+    bz1_1 = pin("BZ1", "1")
+    bz1_2 = pin("BZ1", "2")
+    add_label("BUZZER_CMD", *r4_1, "R4:1", -1.0)
+    add_path([r4_2, (snap(r4_2[0] + 20.32), r4_2[1]), (snap(r4_2[0] + 20.32), bz1_1[1])], "R4:2")
+    body.append(wire(snap(r4_2[0] + 20.32), r4_2[1], snap(r4_2[0] + 20.32), snap(r4_2[1] + 5.08), "R4:2:label"))
+    add_junction(snap(r4_2[0] + 20.32), r4_2[1], "BUZZER_A")
+    add_label("BUZZER_A", snap(r4_2[0] + 20.32), snap(r4_2[1] + 5.08), "R4:2", -1.0)
+    body.append(wire(snap(r4_2[0] + 20.32), bz1_1[1], bz1_1[0], bz1_1[1], "R4:2:buzzer"))
+    body.append(wire(bz1_2[0], bz1_2[1], snap(bz1_2[0] - 12.7), bz1_2[1], "BZ1:2:gnd"))
+    body.append(wire(snap(bz1_2[0] - 12.7), bz1_2[1], snap(bz1_2[0] - 12.7), snap(bz1_2[1] + 7.62), "BZ1:2:gnd:drop"))
+    body.append(power_symbol("power:GND", snap(bz1_2[0] - 12.7), snap(bz1_2[1] + 7.62), "BZ1:2:gnd:symbol"))
+
+    # ------------------------------------------------------------------
+    # Power entry and decoupling landmarks.
+    # ------------------------------------------------------------------
+    body.append(power_symbol("power:+5V", snap(320), snap(60), "pwr:+5v"))
+    body.append(wire(snap(320), snap(60), snap(320), snap(75), "pwr:+5v:stub"))
+    body.append(label("+5V", snap(320), snap(75), "pwr:+5v:label", 1.0))
+    body.append(power_symbol("power:GND", snap(350), snap(70), "pwr:gnd"))
+    body.append(power_symbol("power:PWR_FLAG", snap(335), snap(70), "pwrflag:gnd"))
+    body.append(wire(snap(335), snap(70), snap(350), snap(70), "pwr:gnd:link"))
+
+    # Every unused Nano pin gets an explicit no-connect marker.
+    a1 = by_ref["A1"]
+    used_nano_pins = set(nano_signals) | {"4", "27", "29"}
+    for number in SYMBOL_PINS[a1.symbol]:
+        if number not in used_nano_pins:
+            x, y, _ = pin_position(a1, number)
+            body.append(no_connect(x, y, f"A1:{number}"))
 
     for text, hx, hy in HEADINGS:
         body.append(heading(text, hx, hy))
-
-    # Power entry: explicit +5V/GND sources plus PWR_FLAGs for ERC.
-    px, py = snap(250), snap(230)
-    body.append(power_symbol("power:+5V", px, py, "pwr:+5v"))
-    body.append(wire(px, py, px, py + 3.81, "pwr:+5v:stub"))
-    body.append(label("+5V", px, py + 3.81, "pwr:+5v:label", 1.0))
-    gx = snap(270)
-    body.append(power_symbol("power:GND", gx, py, "pwr:gnd"))
-    body.append(power_symbol("power:PWR_FLAG", gx, py - 7.62, "pwrflag:gnd"))
-    body.append(wire(gx, py, gx, py - 7.62, "pwr:gnd:link"))
+    body.append(note("BUTTON: D2 = INPUT_PULLUP (internal)", 30, 150, "button:pullup"))
+    body.append(note("SW1 to GND; C3 = 100 nF debounce", 30, 154, "button:debounce"))
 
     title = """\t(text "EchoCane carrier board — virtual reconstruction"
 \t\t(at 30 20 0)
