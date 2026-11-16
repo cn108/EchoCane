@@ -9,7 +9,7 @@ assembled.
 
 ![Schematic](../images/EchoCane-schematic.png)
 
-The A3 schematic is organised into labelled functional sections. Local circuit
+The A4-landscape schematic is organised into labelled functional sections. Local circuit
 connections are drawn as orthogonal KiCad wires; global labels are reserved for
 the long Nano-to-peripheral signal runs and for net-name continuity. The mode
 input note records the firmware's internal pull-up (`INPUT_PULLUP`), with SW1
@@ -113,14 +113,63 @@ The same map is asserted by `tests/validate_hardware.py`, which parses
 The motor is inductive; D1 is connected with cathode to +5 V and anode to the
 collector so that turn-off current freewheels through the diode.
 
+### 3.2 Flyback diode verification
+
+D6 is driven by the ATmega328P Timer0A through Arduino `analogWrite()`; the
+classic Nano default is **976.56 Hz**, so the PWM period is **1.024 ms**.
+
+The selected D1 is a **1N4007** standard-recovery rectifier:
+
+| Parameter | 1N4007 | Design stress |
+|---|---|---|
+| Average forward current | 1.0 A at 75 °C lead temperature | 100 mA design point; 150 mA stress case |
+| Non-repetitive surge | 30 A (8.3 ms half-sine) | Motor turn-off/start transient; not measured |
+| Reverse voltage | 1000 V | About 5 V rail plus clamped inductive kick |
+| Reverse recovery | About 2 µs typical; 30 µs conservative maximum | 30 µs is 2.9% of the 1.024 ms period |
+
+At the 100 mA design point the average forward-current margin is 10:1; even the
+150 mA stress case retains 6.7:1. At 40% duty the diode carries the motor
+freewheel current for roughly 60% of each period, so its average current is
+expected to be below 60 mA. The 1N4007 is not a fast-recovery or Schottky diode,
+but at 976.56 Hz its recovery interval is a small fraction of the period and the
+5 V/100 mA stress is far below its voltage and current ratings. **No diode
+change is justified for the present design.** A 1N5819 Schottky or UF4007 would
+reduce forward drop and recovery loss if the PWM frequency were raised to tens
+of kilohertz, or if a measured motor stall current approached the ampere range.
+Motor stall current remains **NOT VERIFIED**.
+
 ## 4. Power architecture
 
-The board is powered from a **commercially manufactured regulated 5 V USB
-source**. There is no battery, charger, boost converter or Li-ion protection
-circuit in this design. That is deliberate: an unverified charging circuit would
-be a larger safety risk than a tethered prototype.
+The carrier board has **no separate 5 V regulator and no external 5 V input
+connector**. The sole source is the Nano module's USB connection to a
+commercially manufactured regulated 5 V USB source. On a classic Nano, USB VBUS
+passes through the module's onboard Schottky diode (and, on genuine boards, its
+resettable fuse) to the module's 5 V rail. The module's **5V pin is an output**
+that exposes that rail; the carrier's `+5V` net is therefore driven by A1 pin 27,
+not by a carrier-side source. There is no battery, charger, boost converter or
+Li-ion protection circuit in this design.
 
-### 4.1 Estimated current budget
+### 4.1 USB power, 5V output and backfeed
+
+- The USB connector on the Nano is the mechanical and electrical entry point;
+  the carrier does not have a second 5 V connector.
+- Do **not** feed an external 5 V supply into the carrier `+5V` net or the Nano
+  5V pin while USB is connected. The 5V pin is an output, bypasses the Nano's
+  input diode/regulator path, and an external source can backfeed the USB host or
+  the module's regulator. The intended configuration is USB only.
+- No external-source ORing, ideal-diode, fuse or reverse-feed protection is
+  fitted on the carrier. If a future revision adds an external 5 V input, it must
+  add and validate that protection rather than paralleling the Nano 5V pin.
+- The schematic has a `PWR_FLAG` on **GND only**. `+5V` is already driven by the
+  Nano's power-output pin; adding a `+5V` PWR_FLAG would create an ERC
+  power-output conflict. The GND flag is an ERC reference marker, not a physical
+  component.
+- Verify the actual Nano module. Some low-cost clones omit or alter the USB fuse
+  or Schottky diode; the backfeed statement above assumes a genuine/known classic
+  Nano with the documented input protection. That module-level assumption is
+  **NOT VERIFIED** for an arbitrary clone.
+
+### 4.2 Estimated current budget
 
 | Load | Estimate |
 |---|---|
@@ -143,7 +192,7 @@ the forced-beta-10 target; a 150 mA stress case would have a forced beta of 13.6
 and is not covered by that target. The board tracks are 0.5 mm for signals and
 0.8 mm for motor and +5 V distribution.
 
-### 4.2 Decoupling and grounding
+### 4.3 Decoupling and grounding
 
 - C1 (100 nF) is placed near the motor/connector supply; C2 (10 µF) provides
   bulk energy.
@@ -167,7 +216,7 @@ The schematic is organised into labelled functional blocks:
 5. **Audio warning** — R4 and BZ1.
 6. **Supply decoupling** — C1 and C2.
 7. **Arduino Nano** — all 30 pins, with no-connect markers on unused pins.
-8. **Power entry** — explicit +5 V and GND symbols and a GND `PWR_FLAG`.
+8. **Power source** — USB/Nano source note and a GND `PWR_FLAG`; `+5V` is driven by the Nano 5V output.
 9. **Mechanical** — H1–H4, excluded from the BOM.
 
 Local block connections are drawn as visible orthogonal wires: the motor base

@@ -27,7 +27,7 @@ BOM = ROOT / "hardware" / "bom" / "EchoCane-BOM.csv"
 SYMBOL_ROOT = Path("/usr/share/kicad/symbols")
 PROJECT = "EchoCane"
 ROOT_UUID = str(uuid.uuid5(uuid.NAMESPACE_URL, "echocane/root-sheet"))
-PAPER = "A3"
+PAPER = "A4"
 POWER_INDEX = 0
 
 # Child symbol -> (library, parent symbol). The parent is embedded under the
@@ -242,37 +242,37 @@ PARTS: list[Part] = [
 
 
 LAYOUT = {
-    "A1": (245, 150),
-    "J1": (55, 60),
-    "J2": (205, 125),
-    "Q1": (180, 170),
-    "R1": (140, 165),
-    "R2": (155, 185),
-    "D1": (170, 150),
-    "C1": (330, 180),
-    "C2": (350, 180),
-    "SW1": (55, 120),
-    "C3": (85, 130),
-    "R3": (105, 190),
-    "D2": (80, 190),
-    "R4": (140, 80),
-    "BZ1": (190, 80),
-    "H1": (330, 240),
-    "H2": (350, 240),
-    "H3": (330, 260),
-    "H4": (350, 260),
+    "A1": (190, 105),
+    "J1": (45, 55),
+    "J2": (155, 88),
+    "Q1": (140, 125),
+    "R1": (105, 115),
+    "R2": (115, 140),
+    "D1": (125, 105),
+    "C1": (235, 105),
+    "C2": (255, 105),
+    "SW1": (45, 100),
+    "C3": (70, 110),
+    "R3": (50, 160),
+    "D2": (70, 160),
+    "R4": (95, 55),
+    "BZ1": (135, 55),
+    "H1": (95, 185),
+    "H2": (115, 185),
+    "H3": (95, 197),
+    "H4": (115, 197),
 }
 
 HEADINGS = [
-    ("ULTRASONIC SENSOR", 30, 42),
-    ("MODE INPUT", 30, 102),
-    ("STATUS LED", 30, 170),
-    ("MOTOR DRIVER", 120, 135),
-    ("AUDIO WARNING", 120, 42),
-    ("ARDUINO NANO", 220, 105),
-    ("POWER ENTRY", 315, 48),
-    ("SUPPLY DECOUPLING", 315, 160),
-    ("MECHANICAL", 315, 220),
+    ("ULTRASONIC SENSOR", 25, 38),
+    ("MODE INPUT", 25, 78),
+    ("STATUS LED", 25, 140),
+    ("MOTOR DRIVER", 95, 80),
+    ("AUDIO WARNING", 90, 38),
+    ("ARDUINO NANO", 170, 70),
+    ("POWER SOURCE", 215, 38),
+    ("SUPPLY DECOUPLING", 225, 90),
+    ("MECHANICAL", 95, 172),
 ]
 
 def uid(*parts: object) -> str:
@@ -531,7 +531,7 @@ def power_symbol(lib_id: str, x: float, y: float, tag: str) -> str:
 def property_positions(part: Part) -> tuple[float, float, float, float, bool]:
     sym = part.symbol
     if part.ref == "A1":
-        return part.x - 22, part.y - 28, part.x - 22, part.y - 28, True
+        return part.x + 15.24, part.y - 27.94, part.x + 15.24, part.y - 27.94, True
     if sym.startswith("Device:R") or sym.startswith("Device:C"):
         return part.x + 3.81, part.y - 1.27, part.x + 3.81, part.y + 1.27, False
     if sym in ("Device:D", "Device:LED"):
@@ -794,14 +794,17 @@ def generate() -> None:
     body.append(power_symbol("power:GND", snap(bz1_2[0] - 12.7), snap(bz1_2[1] + 7.62), "BZ1:2:gnd:symbol"))
 
     # ------------------------------------------------------------------
-    # Power entry and decoupling landmarks.
+    # Power source: the Nano's USB VBUS is the only 5 V source. Its 5V pin
+    # is an output; the +5V net is driven there, so only GND needs a flag.
     # ------------------------------------------------------------------
-    body.append(power_symbol("power:+5V", snap(320), snap(60), "pwr:+5v"))
-    body.append(wire(snap(320), snap(60), snap(320), snap(75), "pwr:+5v:stub"))
-    body.append(label("+5V", snap(320), snap(75), "pwr:+5v:label", 1.0))
-    body.append(power_symbol("power:GND", snap(350), snap(70), "pwr:gnd"))
-    body.append(power_symbol("power:PWR_FLAG", snap(335), snap(70), "pwrflag:gnd"))
-    body.append(wire(snap(335), snap(70), snap(350), snap(70), "pwr:gnd:link"))
+    body.append(note("5V SOURCE: NANO USB VBUS", 215, 44, "pwr:source"))
+    body.append(note("USB -> Nano Schottky -> 5V pin -> +5V", 215, 48, "pwr:path"))
+    body.append(note("5V pin is OUTPUT; no external 5V input", 215, 52, "pwr:output"))
+    body.append(note("Do not backfeed while USB connected", 215, 56, "pwr:backfeed"))
+    body.append(note("GND PWR_FLAG: ERC reference only", 215, 60, "pwr:flag"))
+    body.append(power_symbol("power:GND", snap(250), snap(65), "pwr:gnd"))
+    body.append(power_symbol("power:PWR_FLAG", snap(235), snap(65), "pwrflag:gnd"))
+    body.append(wire(snap(235), snap(65), snap(250), snap(65), "pwr:gnd:link"))
 
     # Every unused Nano pin gets an explicit no-connect marker.
     a1 = by_ref["A1"]
@@ -813,8 +816,10 @@ def generate() -> None:
 
     for text, hx, hy in HEADINGS:
         body.append(heading(text, hx, hy))
-    body.append(note("BUTTON: D2 = INPUT_PULLUP (internal)", 30, 150, "button:pullup"))
-    body.append(note("SW1 to GND; C3 = 100 nF debounce", 30, 154, "button:debounce"))
+    body.append(note("BUTTON: D2 = INPUT_PULLUP (internal)", 25, 128, "button:pullup"))
+    body.append(note("SW1 to GND; C3 = 100 nF debounce", 25, 132, "button:debounce"))
+    body.append(note("D1 1N4007: 1A avg / 30A surge", 95, 158, "diode:ratings"))
+    body.append(note("PWM 976.6 Hz; trr <=30 us << 1.024 ms", 95, 162, "diode:pwm"))
 
     title = """\t(text "EchoCane carrier board — virtual reconstruction"
 \t\t(at 30 20 0)

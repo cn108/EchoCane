@@ -7,9 +7,19 @@ bench measurement.
 
 ## 1. Power and ground
 
-The board is powered from a regulated external 5 V USB source. The Nano's USB
-connector is the mechanical and electrical entry point; the carrier board does
-not include a second regulator or a battery charger.
+The board is powered from a regulated 5 V USB source through the Nano's USB
+connector. On a classic Nano, USB VBUS passes through the module's onboard
+Schottky diode (and resettable fuse on genuine boards) to the 5 V rail; the
+module's **5V pin is an output**. The carrier board has no second regulator, no
+external 5 V input connector and no battery charger. The carrier `+5V` net is
+driven by Nano pin 27.
+
+Do not feed an external 5 V supply into the `+5V` net or the Nano 5V pin while
+USB is connected. That bypasses the Nano's input protection and can backfeed the
+USB host or the module regulator. No external-source ORing or reverse-feed
+protection is fitted. The `PWR_FLAG` is on GND only; adding one to `+5V` would
+conflict with the Nano's power-output pin in ERC. Verify the actual Nano module,
+because some clones omit or alter the USB fuse/diode.
 
 - +5 V is distributed to the Nano 5V pin, J1.1 (HC-SR04), J2.1 (motor), D1
   cathode, C1.1 and C2.1.
@@ -187,16 +197,21 @@ electrical time constant of:
 so the current reaches its steady value quickly compared with the 20 ms pulse.
 The flyback diode carries the inductor current at turn-off and clamps the
 collector near 5 V plus a diode drop; the simulated peak is 5.63 V. A 1N4007 is
-rated for 1000 V and 1 A, far above this stress. Its relatively slow recovery is
-acceptable for a small motor; a Schottky diode would reduce turn-off loss but is
-not necessary for this prototype.
+rated for 1000 V, 1 A average and 30 A surge, far above this stress. D6 uses
+Timer0A `analogWrite()` at the classic Nano default of **976.56 Hz** (1.024 ms
+period). The 1N4007's conservative 30 µs reverse-recovery maximum is about 2.9%
+of that period; at 100 mA design current the average-current margin is 10:1, and
+the 150 mA stress case still has 6.7:1 margin. Its relatively slow recovery is
+acceptable at this low PWM frequency and current; a 1N5819/UF4007 would reduce
+turn-off loss if the PWM frequency were raised or stall current approached the
+ampere range, but no change is justified for this prototype.
 
 ![ngspice driver waveform](../images/driver-waveform.svg)
 
 The waveform is generated from `simulation/simulide/driver.cir` by
 `plot_driver.py`. It is a model, not a measurement of a physical motor.
 
-### 3.4 Why a flyback diode is mandatory
+### 3.5 Why a flyback diode is mandatory
 
 Without D1, turning off Q1 would force the motor current to collapse through the
 transistor's parasitic capacitance and the supply, producing a large inductive
@@ -261,9 +276,11 @@ The bottom GND zone provides a short return path.
 - R1 limits base current; R2 defines Q1's off state.
 - D1 clamps the motor's inductive kick.
 - The HC-SR04 ECHO is 5 V, compatible with the 5 V Nano.
-- There is no reverse-polarity protection on the +5 V input. The design assumes a
-  keyed/known USB source; a production version should add a fuse, reverse
-  polarity protection and transient suppression.
+- There is no external +5 V input and no reverse-polarity protection on the carrier.
+The design assumes the Nano's USB input is the only source and that the module's
+onboard fuse/Schottky protection is intact. A production version that adds an
+external supply should add input ORing, a fuse, reverse-polarity protection and
+transient suppression.
 - There is no ESD protection on the connectors. A production version should add
   TVS diodes or a protected connector.
 - The motor connector is not keyed; the motor has no polarity requirement for

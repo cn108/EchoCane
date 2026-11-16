@@ -238,7 +238,7 @@ mounting holes.
 
 | Item | Result |
 |---|---|
-| Schematic | KiCad 10, ERC 0 errors / 0 warnings |
+| Schematic | KiCad 10, A4 landscape, ERC 0 errors / 0 warnings |
 | PCB | 15 electrical footprints + 4 mounting holes, all tracks routed |
 | DRC | 0 violations, 0 unconnected pads, 0 schematic-parity issues |
 | Board statistics | 63 PTH pads, 4 NPTH, 0 vias, 0.5 mm minimum track, 0.75 mm minimum drill |
@@ -252,9 +252,23 @@ mounting holes.
 
 ![Schematic](images/EchoCane-schematic.png)
 
-The schematic is drawn as labelled functional blocks with visible local wiring;
-global labels are used only for the long Nano-to-peripheral signal runs. It is
-an editable KiCad schematic, not only an image or PDF.
+The schematic is drawn on **A4 landscape** as labelled functional blocks with
+visible local wiring; global labels are used only for the long
+Nano-to-peripheral signal runs. It is an editable KiCad schematic, not only an
+image or PDF.
+
+The sole 5 V source is the Nano's USB connection. On a classic Nano, USB VBUS
+passes through the module's onboard Schottky diode to the 5 V rail; the Nano 5V
+pin is an **output**, and the carrier has no external 5 V input. Do not backfeed
+the `+5V` net while USB is connected. The `PWR_FLAG` is on GND only because the
+Nano's 5V pin already drives `+5V`; adding a second +5 V flag would conflict in
+ERC.
+
+The 1N4007 flyback diode was checked against D6's **976.56 Hz** Timer0A PWM
+(1.024 ms period). Its 1 A average / 30 A surge ratings are far above the 100 mA
+design point, and its conservative 30 µs recovery interval is only about 2.9% of
+the period. No diode change is justified at this frequency and current; the
+1N4007 and PCB remain unchanged.
 
 The board has not been fabricated, assembled or electrically tested. Gerbers are
 design outputs, not manufacturing approval.
