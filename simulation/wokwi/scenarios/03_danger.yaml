@@ -1,0 +1,7 @@
+name: 'Danger range (50 cm)'
+version: 1
+author: 'EchoCane'
+steps:
+  - wait-serial: 'EchoCane ready'
+  - wait-serial: 'level=DANGER'
+  - wait-serial: 'free=0'

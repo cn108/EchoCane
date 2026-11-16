@@ -1,0 +1,32 @@
+[
+  {
+    "name": "01_clear",
+    "scenario": "scenarios/01_clear.yaml",
+    "diagram": "scenarios/diagrams/clear.json",
+    "timeout_ms": 30000
+  },
+  {
+    "name": "02_caution",
+    "scenario": "scenarios/02_caution.yaml",
+    "diagram": "scenarios/diagrams/caution.json",
+    "timeout_ms": 30000
+  },
+  {
+    "name": "03_danger",
+    "scenario": "scenarios/03_danger.yaml",
+    "diagram": "scenarios/diagrams/danger.json",
+    "timeout_ms": 30000
+  },
+  {
+    "name": "04_sensor_fault",
+    "scenario": "scenarios/04_sensor_fault.yaml",
+    "diagram": "scenarios/diagrams/sensor_fault.json",
+    "timeout_ms": 30000
+  },
+  {
+    "name": "05_mode_button",
+    "scenario": "scenarios/05_mode_button.yaml",
+    "diagram": "scenarios/diagrams/mode_button.json",
+    "timeout_ms": 40000
+  }
+]

@@ -1,0 +1,168 @@
+{
+  "version": 1,
+  "author": "EchoCane virtual reconstruction",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-arduino-nano",
+      "id": "nano",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-hc-sr04",
+      "id": "ultrasonic1",
+      "top": -40,
+      "left": -260,
+      "attrs": {
+        "distance": "300"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 110,
+      "left": -240,
+      "attrs": {
+        "color": "blue",
+        "xray": "1",
+        "label": "MODE"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledStatus",
+      "top": -80,
+      "left": 170,
+      "attrs": {
+        "color": "green",
+        "label": "STATUS"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rStatus",
+      "top": -20,
+      "left": 165,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledHaptic",
+      "top": -80,
+      "left": 285,
+      "attrs": {
+        "color": "red",
+        "label": "HAPTIC CMD"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rHaptic",
+      "top": -20,
+      "left": 280,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "bz1",
+      "top": -20,
+      "left": 400,
+      "attrs": {
+        "volume": "0.05",
+        "mode": "smooth"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "ultrasonic1:VCC",
+      "nano:5V",
+      "red",
+      []
+    ],
+    [
+      "ultrasonic1:GND",
+      "nano:GND.1",
+      "black",
+      []
+    ],
+    [
+      "ultrasonic1:TRIG",
+      "nano:9",
+      "orange",
+      []
+    ],
+    [
+      "ultrasonic1:ECHO",
+      "nano:10",
+      "blue",
+      []
+    ],
+    [
+      "btn1:1.r",
+      "nano:2",
+      "green",
+      []
+    ],
+    [
+      "btn1:2.r",
+      "nano:GND.2",
+      "black",
+      []
+    ],
+    [
+      "nano:7",
+      "rStatus:1",
+      "green",
+      []
+    ],
+    [
+      "rStatus:2",
+      "ledStatus:A",
+      "green",
+      []
+    ],
+    [
+      "ledStatus:C",
+      "nano:GND.2",
+      "black",
+      []
+    ],
+    [
+      "nano:6",
+      "rHaptic:1",
+      "purple",
+      []
+    ],
+    [
+      "rHaptic:2",
+      "ledHaptic:A",
+      "purple",
+      []
+    ],
+    [
+      "ledHaptic:C",
+      "nano:GND.2",
+      "black",
+      []
+    ],
+    [
+      "bz1:2",
+      "nano:8",
+      "yellow",
+      []
+    ],
+    [
+      "bz1:1",
+      "nano:GND.2",
+      "black",
+      []
+    ]
+  ]
+}

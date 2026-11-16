@@ -1,0 +1,28 @@
+name: 'Button mode selection'
+version: 1
+author: 'EchoCane'
+# The push button is one of the Wokwi parts with a documented automation
+# control ("pressed"). Hold each press well beyond the 30 ms debounce.
+steps:
+  - wait-serial: 'EchoCane ready'
+  - set-control:
+      part-id: btn1
+      name: pressed
+      value: 1
+  - delay: 250ms
+  - set-control:
+      part-id: btn1
+      name: pressed
+      value: 0
+  - wait-serial: 'mode=QUIET'
+  - delay: 300ms
+  - set-control:
+      part-id: btn1
+      name: pressed
+      value: 1
+  - delay: 250ms
+  - set-control:
+      part-id: btn1
+      name: pressed
+      value: 0
+  - wait-serial: 'mode=DIAGNOSTIC'

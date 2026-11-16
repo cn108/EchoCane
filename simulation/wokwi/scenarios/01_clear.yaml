@@ -1,0 +1,10 @@
+name: 'No obstacle (300 cm)'
+version: 1
+author: 'EchoCane'
+# Run with:
+#   wokwi-cli simulation/wokwi --scenario scenarios/01_clear.yaml \
+#     --diagram-file scenarios/diagrams/clear.json
+steps:
+  - wait-serial: 'EchoCane ready'
+  - wait-serial: 'level=CLEAR'
+  - wait-serial: 'free=1'

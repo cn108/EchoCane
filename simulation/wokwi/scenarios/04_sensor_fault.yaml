@@ -1,0 +1,11 @@
+name: 'Sensor echo timeout and confirmed fault'
+version: 1
+author: 'EchoCane'
+# The scenario diagram ties HC-SR04 ECHO to GND. Every acquisition therefore
+# times out, exercising the fault path rather than an obstacle-free path.
+steps:
+  - wait-serial: 'EchoCane ready'
+  - wait-serial: 'health=DEGRADED'
+  - wait-serial: 'level=FAULT'
+  - wait-serial: 'health=FAULT'
+  - wait-serial: 'free=0'

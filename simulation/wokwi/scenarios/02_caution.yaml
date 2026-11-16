@@ -1,0 +1,7 @@
+name: 'Caution range (120 cm)'
+version: 1
+author: 'EchoCane'
+steps:
+  - wait-serial: 'EchoCane ready'
+  - wait-serial: 'level=CAUTION'
+  - wait-serial: 'free=0'
