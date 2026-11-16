@@ -1,0 +1,11 @@
+{
+  "name": "echocane_core",
+  "version": "0.1.0",
+  "description": "Hardware-independent obstacle detection, sensor health and alert policy for EchoCane",
+  "build": {
+    "srcDir": "src",
+    "includeDir": "include"
+  },
+  "frameworks": "*",
+  "platforms": "*"
+}
