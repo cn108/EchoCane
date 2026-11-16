@@ -135,7 +135,7 @@ warning rather than clearing it.
 | Driver design margins | **PASS** — 270 Ω, 4.2 V loaded GPIO, 11.0 mA base, forced beta 9.10 | `simulation/simulide/driver-analysis.json` |
 | ngspice driver simulation | **EXECUTED** — 12.04 mA base, 104.37 mA motor, 0.0945 V Vce, 5.63 V flyback clamp | `simulation/simulide/ngspice-results.txt` |
 | Independent engineering audit | **PASS** for every available check; physical/external checks remain open | [`docs/audit-report.md`](docs/audit-report.md) |
-| Remote GitHub Actions execution | **NOT VERIFIED** — workflows are configured but were not executed remotely here | no remote run claimed |
+| Remote GitHub Actions execution | **PASS** — firmware/tests and KiCad ERC/DRC jobs completed successfully on GitHub | [EchoCane CI run 43788851832](https://github.com/cn108/EchoCane/actions/runs/43788851832) |
 | Physical hardware / user validation | **NOT VERIFIED (not performed)** | no hardware available |
 
 ## Visual gallery

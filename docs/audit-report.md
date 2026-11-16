@@ -100,7 +100,7 @@ finding; it is not hidden by rewriting history.
 | MFG-05 | Manufacturing files match latest board | PASS | PASS | Regenerated outputs match committed Gerber/drill text except creation timestamps; revision 0.1 |
 | MFG-06 | Fabrication/assembly approval | NOT VERIFIED | NOT VERIFIED | No board house, assembly or physical inspection |
 | CI-01 | Workflow YAML, paths, dependencies and local equivalents | PASS | PASS | YAML parses; local commands pass; native test ordering documented |
-| CI-02 | Remote GitHub Actions execution | NOT VERIFIED | NOT VERIFIED | No remote run observed; no claim made |
+| CI-02 | Remote GitHub Actions execution | NOT VERIFIED | PASS | EchoCane CI run 43788851832 passed firmware/tests and KiCad ERC/DRC on GitHub |
 | DOC-01 | Documentation matches implementation | FAIL | PASS | 1 kΩ/old ngspice/raw names/mode distance/test count corrected; audit links added |
 | DOC-02 | Local Markdown links and asset references | PASS | PASS | Link check passes; images present |
 | IMP-01 | Architecture/testability/memory/readability review | PASS | PASS | Portable core, fixed buffers, no heap; optional future input-capture/watchdog work documented |
@@ -600,7 +600,10 @@ MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/work" -w /work \
 
 Remote Wokwi execution requires `wokwi-cli` and `WOKWI_CLI_TOKEN`; never commit
 the token. Remote GitHub Actions execution requires pushing the repository and
-observing the workflow run; that was not possible here.
+observing the workflow run. The repository has since been pushed and
+[EchoCane CI run 43788851832](https://github.com/cn108/EchoCane/actions/runs/43788851832)
+passed both the firmware/tests and KiCad ERC/DRC jobs. Wokwi scenarios remain
+unexecuted because no CLI token is configured.
 
 ## 14. Residual limitations
 

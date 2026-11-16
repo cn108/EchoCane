@@ -290,7 +290,7 @@ commits the token.
 | EMC, ESD, thermal, drop, water resistance | Not tested |
 | User perception, ergonomics, cane interaction | Not tested |
 | Long-duration reliability / watchdog | Not tested |
-| Remote GitHub Actions execution | Not observed |
+| Remote GitHub Actions execution | PASS — CI run 43788851832 completed successfully |
 
 These are engineering gaps, not footnotes. The device remains an experimental
 supplementary aid.
