@@ -1,6 +1,15 @@
-# EchoCane
+# EchoCane — Arduino Nano Smart-Cane Prototype
 
-**Virtual reconstruction and modernisation of an Arduino Nano smart walking stick.**
+**A safety-first embedded systems project: portable C++ policy core, Arduino Nano firmware, HC-SR04 sensing, PWM haptic drive, KiCad hardware and a documented verification trail.**
+
+[![PlatformIO](https://img.shields.io/badge/PlatformIO-Arduino%20Nano-orange)](https://platformio.org/)
+[![C++17](https://img.shields.io/badge/C%2B%2B-17-blue)](firmware/)
+[![MCU](https://img.shields.io/badge/MCU-ATmega328P-00878F)](https://www.microchip.com/en-us/product/ATmega328P)
+[![KiCad](https://img.shields.io/badge/KiCad-10-1f7a8c)](hardware/)
+[![Tests](https://img.shields.io/badge/tests-25%2F25-brightgreen)](firmware/test/test_core/)
+[![ERC](https://img.shields.io/badge/ERC-0%20errors%20%2F%200%20warnings-brightgreen)](hardware/verification/schematic-erc.rpt)
+[![DRC](https://img.shields.io/badge/DRC-0%20violations%20%2F%200%20parity-brightgreen)](hardware/verification/pcb-drc.rpt)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
 EchoCane is an experimental supplementary mobility aid that measures the distance
 to the nearest surface with an HC-SR04 ultrasonic sensor and gives graded tactile
@@ -8,6 +17,11 @@ and audible warnings. This repository reconstructs the concept as a complete,
 testable embedded-engineering portfolio project: portable C++ policy code,
 Arduino Nano firmware, Wokwi simulation assets, native unit tests, a KiCad
 carrier board, manufacturing outputs and engineering documentation.
+
+> **Project intent:** this is an engineering case study, not a medical device or
+a validated navigation product. The interesting part is the discipline around
+it: bounded sensing, explicit fault behaviour, host-testable policy code,
+power/thermal checks, editable PCB sources and an honest limitations register.
 
 > **Safety notice**
 > EchoCane is an experimental supplementary aid. It is **not** a replacement for
@@ -22,7 +36,25 @@ carrier board, manufacturing outputs and engineering documentation.
 > were **not executed** here because the Wokwi CLI and CI token were unavailable.
 > Simulation is not physical validation.
 
-![EchoCane 3D PCB render](images/EchoCane-3d-top.png)
+## Contents
+
+- [The problem](#the-problem)
+- [What this project demonstrates](#what-this-project-demonstrates)
+- [Demonstrated behaviour](#demonstrated-behaviour)
+- [Status at a glance](#status-at-a-glance)
+- [Visual gallery](#visual-gallery)
+- [Features](#features)
+- [Technology stack](#technology-stack)
+- [Architecture](#architecture)
+- [Repository layout](#repository-layout)
+- [Quick start](#quick-start)
+- [PCB](#pcb)
+- [Engineering decisions and trade-offs](#engineering-decisions-and-trade-offs)
+- [Pin map](#pin-map)
+- [Audit corrections](#audit-corrections)
+- [Engineering limitations](#engineering-limitations)
+- [Documentation](#documentation)
+- [License](#license)
 
 ## The problem
 
@@ -36,6 +68,38 @@ therefore designed around an explicit safety rule:
 
 The project explores that rule through a small, understandable system rather than
 claiming to solve navigation for visually impaired users.
+
+## What this project demonstrates
+
+- **Safety-first firmware policy.** Invalid sensor readings never map to a
+  clear-path result; the system moves through `CAUTION`/`FAULT`, requires
+  consecutive confirmations, and only recovers after consecutive valid reads.
+- **A testable embedded architecture.** Classification, hysteresis, debounce,
+  scheduling and mode policy live in a portable C++ library with no Arduino
+  dependency; hardware-specific `pulseIn`, `analogWrite`, `tone` and `millis`
+  adapters stay at the edge.
+- **Resource-aware AVR work.** The Nano build is constrained and measured:
+  **10,766 / 30,720 bytes flash (35.0%)** and **777 / 2,048 bytes RAM (37.9%)**.
+- **Real hardware engineering.** A complete KiCad 10 schematic and 2-layer PCB,
+  editable sources, Gerbers, Excellon drill, drill map, STEP, schematic/PCB
+  previews and an independent ERC/DRC/parity trail.
+- **Analog and power reasoning.** The motor driver was sized around the loaded
+  ATmega328P GPIO, R2 loading and a forced-beta target; the 1N4007 was checked
+  against the actual 976.56 Hz PWM period and the design-current margins.
+- **Reproducible evidence.** Deterministic schematic/PCB generators,
+  cross-artifact validators, native unit tests and simulator assets are checked
+  into the repository instead of being described only in prose.
+- **Engineering honesty.** The audit findings, unresolved physical-validation
+  gaps and design limitations are published alongside the passing checks.
+
+### How to review this repository
+
+| If you have… | Start here |
+|---|---|
+| 2 minutes | This README, then the [schematic](hardware/schematic/EchoCane-schematic.pdf) |
+| 10 minutes | [Architecture](docs/architecture.md) and [circuit explanation](docs/circuit-explanation.md) |
+| 30 minutes | [Independent audit](docs/audit-report.md), [requirements](docs/requirements.md) and [testing strategy](docs/testing-strategy.md) |
+| A hardware/embedded interview | [Engineering decisions](#engineering-decisions-and-trade-offs), [pin map](#pin-map), [limitations](#engineering-limitations) |
 
 ## Demonstrated behaviour
 
@@ -73,6 +137,22 @@ warning rather than clearing it.
 | Independent engineering audit | **PASS** for every available check; physical/external checks remain open | [`docs/audit-report.md`](docs/audit-report.md) |
 | Remote GitHub Actions execution | **NOT VERIFIED** — workflows are configured but were not executed remotely here | no remote run claimed |
 | Physical hardware / user validation | **NOT VERIFIED (not performed)** | no hardware available |
+
+## Visual gallery
+
+<p align="center">
+  <img src="images/EchoCane-schematic.png" width="49%" alt="A4 KiCad schematic">
+  <img src="images/EchoCane-3d-top.png" width="49%" alt="3D PCB top view">
+</p>
+
+<p align="center">
+  <em>A4 schematic with visible functional-block wiring; 3D top render of the 100 × 85 mm carrier PCB.</em>
+</p>
+
+Additional views: [schematic PDF](hardware/schematic/EchoCane-schematic.pdf),
+[PCB PDF](hardware/pcb/EchoCane-pcb.pdf),
+[3D bottom](images/EchoCane-3d-bottom.png),
+[driver waveform](images/driver-waveform.svg).
 
 ## Features
 
@@ -299,6 +379,18 @@ MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/work" -w /work \
 The detailed layer/export commands are in
 [`docs/hardware-design.md`](docs/hardware-design.md).
 
+## Engineering decisions and trade-offs
+
+| Decision | Why it was chosen | What it costs |
+|---|---|---|
+| **270 Ω base resistor + PN2222A** | Uses the loaded-GPIO bound, includes R2 loading and meets the forced-beta-10 target at 100 mA | Motor current above the ~110 mA forced-beta-10 ceiling is not covered; stall current is unverified |
+| **USB-only 5 V architecture** | The Nano's USB input is the intended source; no unvalidated charger or second regulator is added | The carrier is tethered; no external 5 V input or ORing/backfeed protection is fitted |
+| **1N4007 flyback diode retained** | 1 A / 30 A / 1000 V ratings and ≤30 µs recovery are adequate at 976.56 Hz and 100 mA | It is not a fast-recovery/Schottky part; revisit if PWM frequency or stall current rises |
+| **Portable `echocane_core` library** | Policy can be compiled and tested on the host without Arduino headers | Hardware adapters remain thin and must be reviewed separately |
+| **Wokwi actuator proxy** | A PWM LED lets the command path be exercised without a vibration-motor model | It does not prove tactile output, motor torque or acoustic behaviour |
+| **Local wires + long-distance labels** | Local block circuits are visually traceable; Nano-to-block nets stay readable | Cross-sheet connectivity is label-based, not one continuous drawn wire |
+| **A4 landscape schematic** | Compact enough to read as a single engineering sheet while keeping the Nano central | More constrained placement than an A3 sheet; labels and sections must be kept disciplined |
+
 ## Pin map
 
 | Signal | Nano pin | ATmega328P port | Connects to |
@@ -380,6 +472,11 @@ are in [`docs/audit-report.md`](docs/audit-report.md) and
 - [Safety analysis](docs/safety-analysis.md)
 - [Development history and milestones](docs/development-history.md)
 - [Scenario matrix](simulation/scenarios/README.md)
+
+## Author
+
+Built and documented as an embedded-systems portfolio project by
+**[@cn108](https://github.com/cn108)**.
 
 ## License
 
