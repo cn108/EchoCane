@@ -38,9 +38,9 @@ flowchart LR
     AU[AudioController]
     LD[LedIndicator]
     SR[SerialReporter]
-    BTN[ButtonDebouncer]
   end
   subgraph CORE["echocane_core (portable, no Arduino.h)"]
+    BTN[ButtonDebouncer]
     EC[EchoCaneController]
     OD[ObstacleDetector]
     MF[MedianFilter]
