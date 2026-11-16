@@ -344,6 +344,10 @@ the `+5V` net while USB is connected. The `PWR_FLAG` is on GND only because the
 Nano's 5V pin already drives `+5V`; adding a second +5 V flag would conflict in
 ERC.
 
+### Power Design
+
+**Power Design Disclaimer:** The v0.1 schematic is powered directly via the Arduino Nano's USB port for prototyping. The vibration motor's stall current may exceed the USB port's safe limits. The final production design will include a dedicated 5V voltage regulator and a Li-ion battery management circuit.
+
 The 1N4007 flyback diode was checked against D6's **976.56 Hz** Timer0A PWM
 (1.024 ms period). Its 1 A average / 30 A surge ratings are far above the 100 mA
 design point, and its conservative 30 µs recovery interval is only about 2.9% of

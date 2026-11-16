@@ -3890,7 +3890,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "f82fa77c-2327-58d1-8922-7da0651b05b9")
-		(property "Reference" "D2"
+		(property "Reference" "D3"
 			(at 69.85 152.4 0)
 			(effects
 				(font
@@ -3944,7 +3944,7 @@
 		(instances
 			(project "EchoCane"
 				(path "/dcfb3bb2-a873-5bd7-9648-2840238e2d2e"
-					(reference "D2")
+					(reference "D3")
 					(unit 1)
 				)
 			)
@@ -3968,7 +3968,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100"
+		(property "Value" "220"
 			(at 99.06 55.88 0)
 			(effects
 				(font
@@ -6034,7 +6034,7 @@
 			)
 		)
 	)
-	(text "5V SOURCE: NANO USB VBUS"
+	(text "5V SOURCE: NANO USB VBUS (Prototyping only)"
 		(at 215 44 0)
 		(effects
 			(font
@@ -6044,7 +6044,7 @@
 		)
 		(uuid "eed9196a-1e5e-5a4b-abc9-256eddca19bf")
 	)
-	(text "USB -> Nano Schottky -> 5V pin -> +5V"
+	(text "USB -> Nano internal polyfuse -> 5V pin -> +5V"
 		(at 215 48 0)
 		(effects
 			(font
@@ -6083,6 +6083,16 @@
 			(justify left bottom)
 		)
 		(uuid "9b48f5df-652d-516d-8250-1f05bf290763")
+	)
+	(text "NOTE: Final version requires dedicated 5V regulator and battery to handle motor stall current."
+		(at 215 64 0)
+		(effects
+			(font
+				(size 1.5 1.5)
+			)
+			(justify left bottom)
+		)
+		(uuid "2eee1adb-72e2-57a5-98d4-6de3c0cb56de")
 	)
 	(symbol
 		(lib_id "power:GND")
