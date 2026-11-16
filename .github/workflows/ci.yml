@@ -47,6 +47,14 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Make verification reports writable by the KiCad container
+        run: |
+          # The container runs as a different UID from the GitHub runner. The
+          # reports are overwritten in place, so make both the directory and
+          # existing reports writable before invoking KiCad.
+          mkdir -p hardware/verification
+          chmod -R a+rwx hardware/verification
+
       - name: Run ERC and DRC in KiCad container
         run: |
           docker run --rm -v "$PWD:/work" -w /work kicad/kicad:10.0 bash -lc '
