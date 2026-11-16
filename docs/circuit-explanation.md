@@ -149,9 +149,10 @@ lowering R1 without checking the pin current is not acceptable.
 The 330 Ω, 300 Ω and 270 Ω BJT cases are compared in
 [`hardware-design.md`](hardware-design.md#22-driver-alternatives-considered). The
 270 Ω BJT is retained because it fits the existing TO-92 footprint and meets the
-loaded-GPIO target. An IRLZ44N TO-220 MOSFET has a conservative 39 mΩ maximum at
-4.5 V gate drive (the 4 V maximum is 39 mΩ; the 5 V maximum is 28 mΩ), so its
-conduction loss at 100 mA is only about 0.39 mW. It is electrically viable, but it
+loaded-GPIO target. An IRLZ44N TO-220 MOSFET has a 35 mΩ vendor parametric
+maximum at 4.5 V gate drive and a conservative 39 mΩ bound from its 4 V maximum
+(the 5 V maximum is 28 mΩ), so its conduction loss at 100 mA is only about
+0.39 mW. It is electrically viable, but it
 requires a different footprint, gate resistor and pull-down, and its 66 nC gate
 charge is much larger than the BJT base charge. It is not a drop-in replacement
 for revision 0.1.

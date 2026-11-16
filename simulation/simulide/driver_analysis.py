@@ -38,6 +38,7 @@ LED_VF = 2.0
 LED_R = 220.0
 PWM_HZ = 976.6
 
+MOSFET_RDS_ON_4V5_VENDOR_MAX_OHM = 0.035
 MOSFET_RDS_ON_4V_MAX_OHM = 0.039
 MOSFET_RDS_ON_5V_MAX_OHM = 0.028
 MOSFET_QG_MAX_NC = 66.0
@@ -182,6 +183,7 @@ def main() -> int:
             "package": "TO-220",
             "vds_V": 55,
             "id_A": 47,
+            "rds_on_4v5_vendor_max_ohm": MOSFET_RDS_ON_4V5_VENDOR_MAX_OHM,
             "rds_on_4v_max_ohm": MOSFET_RDS_ON_4V_MAX_OHM,
             "rds_on_5v_max_ohm": MOSFET_RDS_ON_5V_MAX_OHM,
             "rds_on_4v5_conservative_ohm": MOSFET_RDS_ON_4V_MAX_OHM,
@@ -192,8 +194,9 @@ def main() -> int:
             "average_gate_charge_current_uA": round(mosfet_gate_charge_current * 1e6, 3),
             "selection": "NOT SELECTED for revision 0.1",
             "reason": (
-                "It meets the 4.5 V gate-drive requirement with a conservative "
-                "39 mOhm bound and has very low conduction loss, but it is a "
+                "It meets the 4.5 V gate-drive requirement (35 mOhm vendor "
+                "parametric maximum; 39 mOhm conservative bound from the 4 V "
+                "datasheet maximum) and has very low conduction loss, but it is a "
                 "TO-220 part that does not fit the existing TO-92 footprint; "
                 "the added board area, gate charge and ESD handling are not "
                 "justified for a 100 mA design point when a 270 ohm base "

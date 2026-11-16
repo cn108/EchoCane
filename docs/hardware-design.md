@@ -60,11 +60,11 @@ value.
 | 330 Ω + PN2222A | 8.97 mA base; forced beta 11.1; R1 27.3 mW | **Rejected**: misses the forced-beta-10 target with loaded GPIO and R2 |
 | 300 Ω + PN2222A | 9.88 mA base; forced beta 10.12; R1 30.0 mW | **Rejected**: marginal failure of the same target; no demonstrated benefit over 270 Ω |
 | **270 Ω + PN2222A** | **11.0 mA base; forced beta 9.10; R1 33.3 mW** | **Selected**: fits existing TO-92 footprint and pin budget |
-| IRLZ44N logic-level MOSFET | ≤39 mΩ at 4.5 V gate drive; 0.39 mW at 100 mA; 66 nC max gate charge | Electrically viable, but TO-220 does not fit the TO-92 footprint and the board/gate-drive/ESD changes are not justified for 100 mA |
+| IRLZ44N logic-level MOSFET | 35 mΩ vendor 4.5 V max; 39 mΩ conservative bound; 0.39 mW at 100 mA; 66 nC max gate charge | Electrically viable, but TO-220 does not fit the TO-92 footprint and the board/gate-drive/ESD changes are not justified for 100 mA |
 
-The MOSFET comparison uses the conservative 39 mΩ maximum specified at VGS = 4 V
-(the 5 V maximum is 28 mΩ); at 4.5 V the guaranteed resistance is therefore no
-worse than 39 mΩ. The IRLZ44N is a 55 V, 47 A TO-220 device with a 1–2 V gate
+The MOSFET comparison uses the vendor parametric maximum of 35 mΩ at VGS = 4.5 V
+and the more conservative 39 mΩ maximum specified at VGS = 4 V (the 5 V maximum
+is 28 mΩ). The IRLZ44N is a 55 V, 47 A TO-220 device with a 1–2 V gate
 threshold. Its gate charge is much larger than the BJT base charge and would need
 a gate resistor and pull-down. The PN2222A remains the appropriate revision-0.1
 choice; the MOSFET is documented as a future alternative, not silently selected

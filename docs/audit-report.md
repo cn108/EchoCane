@@ -504,9 +504,10 @@ The architecture is appropriate for an ATmega328P Nano:
   choice, not a validated ergonomic value.
 - The 270 Ω base resistor is consistent with the loaded-GPIO forced-beta target
   and the Nano pin limit. The 330 Ω and 300 Ω cases are retained as rejected
-  alternatives. A logic-level IRLZ44N MOSFET is electrically viable at 4.5 V but
-  would require a TO-220 footprint, gate resistor and pull-down; it is not a
-  drop-in replacement for this prototype.
+  alternatives. A logic-level IRLZ44N MOSFET is electrically viable at 4.5 V
+  (35 mΩ vendor parametric maximum; 39 mΩ conservative bound) but would require
+  a TO-220 footprint, gate resistor and pull-down; it is not a drop-in
+  replacement for this prototype.
 - The largest remaining firmware improvement is replacing `pulseIn` with timer
   input capture, which would remove the 25 ms blocking window. That would be a
   new implementation and is not included in this audit.
