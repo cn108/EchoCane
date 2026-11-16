@@ -1,0 +1,45 @@
+* EchoCane vibration-motor driver - supplementary transient simulation
+* This models the electrical driver, not tactile output.
+*
+* VCC -- Rmotor -- Lmotor -- Q1 collector
+* Q1 emitter -- GND, Q1 base -- Rb -- D6 PWM source
+* D1 is the flyback diode across the motor (cathode to VCC).
+*
+* The motor is a lumped 47 ohm / 10 mH load, representing about 100 mA at 5 V.
+* Component models are generic first-order models, not manufacturer SPICE
+* models. Results are indicative, not a substitute for bench measurement.
+
+.option TEMP=25
+
+VCC  vcc 0 DC 5
+VDRIVE drive 0 PULSE(0 5 0 1u 1u 20m 50m)
+
+RB drive base 1k
+Q1 collector base 0 QN2222
+RMOT vcc motor 47
+LMOT motor motor_return 10m
+VSENSE motor_return collector 0
+D1 diode_anode vcc D1N4007
+VSENSE_D collector diode_anode 0
+
+.model QN2222 NPN(Is=1e-14 Bf=100 Vaf=100 Ikf=0.3 Rb=10 Rc=0.1 Re=0.1
++ Cjc=8p Cje=25p Tf=0.4n Tr=50n)
+
+.model D1N4007 D(Is=7.02e-9 N=1.8 Rs=0.04 Cjo=25p M=0.45 Vj=0.7
++ Fc=0.5 Bv=1000 Ibv=5e-6 Tt=5e-6)
+
+.control
+run
+set wr_singlescale
+wrdata driver-waveform.txt v(drive) v(base) v(collector) i(VSENSE) i(VSENSE_D)
+meas tran ib_avg AVG i(VDRIVE) FROM=10m TO=19m
+meas tran vbe_avg AVG v(base) FROM=10m TO=19m
+meas tran vce_avg AVG v(collector) FROM=10m TO=19m
+meas tran motor_current_avg AVG i(VCC) FROM=10m TO=19m
+meas tran vce_peak MAX v(collector) FROM=19m TO=25m
+meas tran supply_peak MAX i(VCC) FROM=10m TO=19m
+quit
+.endc
+
+.tran 10u 120m 0 10u UIC
+.end
