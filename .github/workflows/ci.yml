@@ -1,0 +1,68 @@
+name: EchoCane CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  firmware:
+    name: Firmware, tests and consistency
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install platformio
+
+      - name: Run native unit tests
+        run: pio test -e native
+
+      - name: Build Arduino Nano firmware
+        run: pio run -e nanoatmega328
+
+      - name: Validate Wokwi structure and scenario mappings
+        run: python tests/validate_simulation.py
+
+      - name: Validate firmware, netlist, BOM and Wokwi consistency
+        run: python tests/validate_hardware.py
+
+      - name: Check driver design margins
+        run: python simulation/simulide/driver_analysis.py
+
+  kicad:
+    name: KiCad ERC and DRC
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run ERC and DRC in KiCad container
+        run: |
+          docker run --rm -v "$PWD:/work" -w /work kicad/kicad:10.0 bash -lc '
+            set -e
+            kicad-cli sch erc --severity-all --exit-code-violations \
+              -o hardware/verification/schematic-erc.rpt \
+              hardware/kicad/EchoCane.kicad_sch
+            kicad-cli pcb drc --severity-all --exit-code-violations \
+              --schematic-parity --refill-zones \
+              -o hardware/verification/pcb-drc.rpt \
+              hardware/kicad/EchoCane.kicad_pcb
+          '
+
+      - name: Upload verification reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: kicad-verification
+          path: |
+            hardware/verification/schematic-erc.rpt
+            hardware/verification/pcb-drc.rpt
+            hardware/verification/pcb-stats.txt
+          if-no-files-found: error

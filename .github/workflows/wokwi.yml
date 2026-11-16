@@ -1,0 +1,62 @@
+name: Wokwi scenarios (optional)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "firmware/**"
+      - "simulation/wokwi/**"
+      - "tests/run_wokwi_scenarios.py"
+      - ".github/workflows/wokwi.yml"
+
+jobs:
+  scenarios:
+    name: Run Wokwi scenarios
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install platformio
+
+      - name: Build firmware for Wokwi
+        run: pio run -e nanoatmega328
+
+      - name: Check for Wokwi token
+        id: token
+        run: echo "present=${{ secrets.WOKWI_CLI_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Explain skip when no token is configured
+        if: steps.token.outputs.present != 'true'
+        run: |
+          echo "::notice::WOKWI_CLI_TOKEN is not configured; Wokwi scenarios were not executed."
+
+      - name: Install Wokwi CLI
+        if: steps.token.outputs.present == 'true'
+        run: curl -L wokwi.com/ci/install.sh | sh
+
+      - name: Add Wokwi CLI to PATH
+        if: steps.token.outputs.present == 'true'
+        run: echo "$HOME/bin" >> "$GITHUB_PATH"
+
+      - name: Run all automated scenarios
+        if: steps.token.outputs.present == 'true'
+        env:
+          WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
+        run: python tests/run_wokwi_scenarios.py
+
+      - name: Upload Wokwi serial logs
+        if: steps.token.outputs.present == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wokwi-serial-logs
+          path: test-results/
+          if-no-files-found: warn
