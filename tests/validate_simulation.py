@@ -30,6 +30,34 @@ PIN_MAP = {
 errors: list[str] = []
 warnings: list[str] = []
 
+# Each diagram has a deliberate stimulus and, except for the fault case, the
+# same electrical wiring. Keep these assertions explicit so a renamed or
+# mis-wired diagram cannot pass merely because its JSON is well formed.
+EXPECTED_DIAGRAMS = {
+    "diagram.json": (300, "nano:10"),
+    "scenarios/diagrams/clear.json": (300, "nano:10"),
+    "scenarios/diagrams/caution.json": (120, "nano:10"),
+    "scenarios/diagrams/danger.json": (50, "nano:10"),
+    "scenarios/diagrams/mode_button.json": (300, "nano:10"),
+    "scenarios/diagrams/sensor_fault.json": (300, "nano:GND.2"),
+}
+
+COMMON_LINKS = [
+    ("ultrasonic1:VCC", "nano:5V"),
+    ("ultrasonic1:GND", "nano:GND.1"),
+    ("ultrasonic1:TRIG", "nano:9"),
+    ("btn1:1.r", "nano:2"),
+    ("btn1:2.r", "nano:GND.2"),
+    ("nano:7", "rStatus:1"),
+    ("rStatus:2", "ledStatus:A"),
+    ("ledStatus:C", "nano:GND.2"),
+    ("nano:6", "rHaptic:1"),
+    ("rHaptic:2", "ledHaptic:A"),
+    ("ledHaptic:C", "nano:GND.2"),
+    ("nano:8", "bz1:2"),
+    ("bz1:1", "nano:GND.2"),
+]
+
 
 def check_diagram(path: Path) -> None:
     try:
@@ -66,6 +94,33 @@ def check_diagram(path: Path) -> None:
                     f"{path.relative_to(ROOT)}: HC-SR04 distance {distance} out of range"
                 )
 
+    relative = path.relative_to(WOKWI).as_posix()
+    expected = EXPECTED_DIAGRAMS.get(relative)
+    if expected is None:
+        errors.append(f"{path.relative_to(ROOT)}: no expected stimulus mapping")
+    else:
+        expected_distance, expected_echo = expected
+        actual_distance = None
+        for part in parts:
+            if part.get("type") == "wokwi-hc-sr04":
+                actual_distance = int(part.get("attrs", {}).get("distance", "0"))
+        if actual_distance != expected_distance:
+            errors.append(
+                f"{path.relative_to(ROOT)}: expected distance {expected_distance}, "
+                f"got {actual_distance}"
+            )
+
+        links = {
+            frozenset((connection[0], connection[1]))
+            for connection in data.get("connections", [])
+            if len(connection) >= 2
+        }
+        for first, second in [*COMMON_LINKS, ("ultrasonic1:ECHO", expected_echo)]:
+            if frozenset((first, second)) not in links:
+                errors.append(
+                    f"{path.relative_to(ROOT)}: missing {first} <-> {second}"
+                )
+
     connected_pins: set[tuple[str, str]] = set()
     for connection in data.get("connections", []):
         if len(connection) < 2:
@@ -86,23 +141,15 @@ def check_diagram(path: Path) -> None:
                 )
             connected_pins.add((part_id, pin))
 
-    required = {
-        "ultrasonic1": {"VCC", "TRIG", "ECHO", "GND"},
-        "btn1": {"1.r", "2.r"},
-        "bz1": {"1", "2"},
-    }
-    for part_id, pins in required.items():
-        if part_id not in by_id:
-            errors.append(f"{path.relative_to(ROOT)}: missing {part_id}")
-            continue
-        for pin in pins:
-            if (part_id, pin) not in connected_pins:
-                errors.append(f"{path.relative_to(ROOT)}: {part_id}:{pin} not connected")
-
-    # All four Nano ground/power references used by the design must exist.
-    for pin in ("5V", "GND.1", "GND.2"):
-        if ("nano", pin) not in connected_pins:
-            errors.append(f"{path.relative_to(ROOT)}: nano:{pin} not connected")
+    # Every endpoint in the explicit link list must be connected. This also
+    # checks that the sensor, button, LED, haptic proxy and buzzer are present.
+    for first, second in COMMON_LINKS:
+        for endpoint in (first, second):
+            part_id, pin = endpoint.split(":", 1)
+            if part_id not in by_id:
+                errors.append(f"{path.relative_to(ROOT)}: missing {part_id}")
+            elif (part_id, pin) not in connected_pins:
+                errors.append(f"{path.relative_to(ROOT)}: {endpoint} not connected")
 
 
 def check_scenarios() -> None:
@@ -156,8 +203,8 @@ def main() -> int:
         return 1
 
     print(
-        f"OK: {len(diagrams)} diagrams validated, scenario mappings present, "
-        f"{len(warnings)} warning(s)"
+        f"OK: {len(diagrams)} diagrams validated with explicit pin/stimulus "
+        f"mappings, {len(warnings)} warning(s)"
     )
     return 0
 

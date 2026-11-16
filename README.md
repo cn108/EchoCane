@@ -61,20 +61,24 @@ warning rather than clearing it.
 
 | Check | Result | Evidence |
 |---|---|---|
-| Arduino Nano firmware build | **PASS** — 10,766 / 30,720 bytes flash (35.0 %), 779 / 2,048 bytes RAM (38.0 %) | PlatformIO `nanoatmega328` |
-| Host unit tests | **PASS** — 18 / 18 | `pio test -e native` |
-| Wokwi structural validation | **PASS** — 6 diagrams, scenario mappings present, 0 errors | `python tests/validate_simulation.py` |
-| Wokwi scenario execution | **NOT RUN** — CLI/token unavailable | no serial logs claimed |
+| Arduino Nano firmware build | **PASS** — 10,766 / 30,720 bytes flash (35.0 %), 777 / 2,048 bytes RAM (37.9 %) | PlatformIO `nanoatmega328` |
+| Host unit tests | **PASS** — 25 / 25 | `pio test -e native` |
+| Wokwi structural validation | **PASS** — 6 diagrams with explicit pin/stimulus mappings, 0 warnings | `python tests/validate_simulation.py` |
+| Wokwi scenario execution | **NOT VERIFIED (NOT RUN)** — CLI/token unavailable | no serial logs claimed |
 | Schematic ERC | **PASS** — 0 errors, 0 warnings | `hardware/verification/schematic-erc.rpt` |
 | PCB DRC | **PASS** — 0 DRC violations, 0 unconnected pads, 0 schematic-parity issues | `hardware/verification/pcb-drc.rpt` |
 | Cross-artifact consistency | **PASS** — 12 nets, 19 components, 15 BOM rows, 8 Wokwi links agree | `python tests/validate_hardware.py` |
-| ngspice driver simulation | **EXECUTED** — 4.16 mA base, 103.7 mA motor, 0.124 V Vce, 5.77 V flyback clamp | `simulation/simulide/ngspice-results.txt` |
-| Physical hardware / user validation | **NOT PERFORMED** | no hardware available |
+| Driver design margins | **PASS** — 330 Ω base resistor, 11.5 mA paper base current, forced beta 8.68 | `simulation/simulide/driver-analysis.json` |
+| ngspice driver simulation | **EXECUTED** — 12.34 mA base, 104.4 mA motor, 0.094 V Vce, 5.77 V flyback clamp | `simulation/simulide/ngspice-results.txt` |
+| Independent engineering audit | **PASS** for every available check; physical/external checks remain open | [`docs/audit-report.md`](docs/audit-report.md) |
+| Remote GitHub Actions execution | **NOT VERIFIED** — workflows are configured but were not executed remotely here | no remote run claimed |
+| Physical hardware / user validation | **NOT VERIFIED (not performed)** | no hardware available |
 
 ## Features
 
-- Non-blocking application loop with 60 ms sensor scans, 5 ms button polling and
-  scheduled haptic/audio/LED patterns.
+- Cooperative application loop with 60 ms sensor scans, 5 ms button polling and
+  scheduled haptic/audio/LED patterns. The HC-SR04 acquisition is bounded but
+  blocking for up to 25 ms; it is not a hard-real-time loop.
 - Five-sample median filter, asymmetric hysteresis, invalid-reading handling,
   timeout detection, fault confirmation and recovery.
 - Three operating modes: **Assist** (haptic + audio), **Quiet** (haptic only) and
@@ -125,7 +129,7 @@ EchoCane/
 │   ├── include/                 # Arduino-facing adapters and pin map
 │   ├── src/                     # SensorManager, outputs, main.cpp
 │   ├── lib/echocane_core/       # portable policy library
-│   └── test/test_core/          # 18 Unity tests, native environment
+│   └── test/test_core/          # 25 Unity tests, native environment
 ├── hardware/
 │   ├── kicad/                   # schematic, PCB, project, netlist
 │   ├── schematic/               # PDF and SVG
@@ -227,9 +231,10 @@ The local build, host tests, ERC and DRC do **not** require a token.
 
 The carrier board is **100 × 85 mm**, 2-layer, 1.6 mm FR-4, designed around the
 classic 30-pin Arduino Nano module. It includes an HC-SR04 4-pin connector, a
-2-pin vibration-motor connector, a PN2222A low-side switch with base resistor and
-pull-down, a 1N4007 flyback diode, motor supply decoupling, a mode button with an
-RC debounce capacitor, a status LED, a buzzer and four M3 mounting holes.
+2-pin vibration-motor connector, a PN2222A low-side switch with a 330 Ω base
+resistor and 10 kΩ pull-down, a 1N4007 flyback diode, motor supply decoupling, a
+mode button with an RC debounce capacitor, a status LED, a buzzer and four M3
+mounting holes.
 
 | Item | Result |
 |---|---|
@@ -238,7 +243,7 @@ RC debounce capacitor, a status LED, a buzzer and four M3 mounting holes.
 | DRC | 0 violations, 0 unconnected pads, 0 schematic-parity issues |
 | Board statistics | 63 PTH pads, 4 NPTH, 0 vias, 0.5 mm minimum track, 0.75 mm minimum drill |
 | Manufacturing | Gerbers, Excellon drill, drill map PDF, Gerber job file, STEP |
-| 3D | Top and bottom renders; the Nano module's vendor 3D model is not in the KiCad library, so A1 is shown by its footprint outline |
+| 3D | Top and bottom renders; the Nano module's vendor model is not in the installed KiCad library, so A1 is shown by its footprint outline (see the audit report) |
 
 **Preview:** [schematic PDF](hardware/schematic/EchoCane-schematic.pdf) ·
 [PCB PDF](hardware/pcb/EchoCane-pcb.pdf) ·
@@ -292,6 +297,19 @@ The detailed layer/export commands are in
 The same assignments are asserted across `Pins.h`, the KiCad netlist, the BOM
 and the Wokwi diagram by `tests/validate_hardware.py`.
 
+## Audit corrections
+
+An independent audit rechecked the full repository rather than relying on the
+initial status table. It corrected the forced-beta inequality in the driver
+calculation and changed R1 from 1 kΩ to **330 Ω**; removed an unrepresented
+optional H5–H6 BOM row; moved C2 to give the two 5 mm capacitors mechanical
+clearance; restored the board title-block revision; strengthened Wokwi validation
+to assert exact GPIO/stimulus mappings; removed dead configuration; added an
+overflow-safe echo conversion; and expanded the native suite from 18 to 25 tests.
+All generated hardware outputs were regenerated. The full findings, evidence and
+remaining gaps are in [`docs/audit-report.md`](docs/audit-report.md) and
+[`docs/limitations-register.md`](docs/limitations-register.md).
+
 ## Engineering limitations
 
 - **No physical validation.** No hardware was purchased or assembled. The
@@ -314,7 +332,9 @@ and the Wokwi diagram by `tests/validate_hardware.py`.
   defaults. They are not clinically or ergonomically validated.
 - **PCB is unmanufactured.** DRC/ERC clean results do not prove assembly yield,
   EMC, thermal behaviour or connector reliability. The Nano module's 3D model is
-  absent from the installed KiCad library, so it is not in the STEP/render.
+  absent from the installed KiCad library, so it is not in the STEP/render. A
+  CC0 candidate model exists, but it was not independently dimensionally verified
+  and is therefore not included; see [`docs/limitations-register.md`](docs/limitations-register.md).
 - **Power.** The design assumes a commercially manufactured regulated 5 V USB
   source. No lithium-ion charging circuit is designed or validated. Motor stall
   current can exceed the 100 mA estimate; the source must be sized accordingly.
@@ -326,6 +346,8 @@ and the Wokwi diagram by `tests/validate_hardware.py`.
 - [Hardware design](docs/hardware-design.md)
 - [Circuit explanation and calculations](docs/circuit-explanation.md)
 - [Software design](docs/software-design.md)
+- [Independent engineering audit](docs/audit-report.md)
+- [Outstanding limitations register](docs/limitations-register.md)
 - [Testing strategy and results](docs/testing-strategy.md)
 - [Simulation limitations](docs/simulation-limitations.md)
 - [Safety analysis](docs/safety-analysis.md)

@@ -58,7 +58,6 @@ struct AppConfig {
   // Human interface.
   uint8_t buttonDebounceMs = 30;
   uint16_t telemetryIntervalMs = 500;
-  uint16_t modeAnnounceMs = 900;
 
   // Output patterns.
   HapticPattern cautionHaptic = {40, 180, 320};

@@ -198,7 +198,7 @@ Telemetry: EC|t=..|raw=..|d=..|f=..|level=..|health=..|mode=..|free=..
 Periodic record:
 
 ```text
-EC|t=1234|raw=Valid|d=120|f=120|level=CAUTION|health=OK|mode=ASSIST|free=0
+EC|t=1234|raw=OK|d=120|f=120|level=CAUTION|health=OK|mode=ASSIST|free=0
 ```
 
 Event record:
@@ -207,7 +207,8 @@ Event record:
 EC_EVENT|t=1234|reason=state|level=DANGER|health=OK|mode=ASSIST
 ```
 
-`raw` is `Valid`, `Timeout` or `OutOfRange`. `d` is the latest raw distance or
+`raw` is `OK`, `TIMEOUT` or `OUT_OF_RANGE` (the enum names are `Valid`,
+`Timeout` and `OutOfRange`). `d` is the latest raw distance or
 `none`; `f` is the filtered distance or `none`. `free=1` is only emitted for an
 explicit clear assertion.
 
@@ -242,7 +243,7 @@ and avoids signed overflow.
   strings.
 - `F()` macro keeps constant banner strings in flash on AVR.
 - `snprintf` is used only for telemetry, not in the control path.
-- Final build: 10,766 bytes flash (35.0 %), 779 bytes RAM (38.0 %).
+- Final build: 10,766 bytes flash (35.0 %), 777 bytes RAM (37.9 %).
 
 The largest stack use is the telemetry formatting path. The median sort copies
 five `uint16_t` values. Both are small relative to the 2 KB SRAM.
@@ -269,9 +270,10 @@ same policy sources and injects:
 - custom `AppConfig` thresholds and timings,
 - fake timestamps for debounce/pulse tests.
 
-The 18 tests cover classification boundaries, hysteresis release, filtering,
-timeout/fault/recovery, button debounce, mode cycling, pattern selection, timers
-and telemetry. See [testing-strategy.md](testing-strategy.md).
+The 25 tests cover classification boundaries, hysteresis release, filtering,
+timeout/fault/recovery, exact recovery transitions, button debounce, mode cycling,
+pattern selection, timer rollover, echo-pulse conversion (including overflow) and
+telemetry buffer/formatting edges. See [testing-strategy.md](testing-strategy.md).
 
 ## 13. Coding conventions
 
@@ -293,5 +295,5 @@ and telemetry. See [testing-strategy.md](testing-strategy.md).
 - The mode button has no long-press configuration or persistence across reset.
 - Telemetry is text-only; there is no binary protocol or error-detecting checksum.
 - There is no watchdog reset in this version.
-- The `modeAnnounceMs` configuration field is reserved and not used by the current
-  output scheduler.
+- The 330 Ω base resistor is sized for the modelled 100 mA motor; motor stall
+  current and worst-case transistor gain remain bench-verification items.

@@ -4,16 +4,16 @@
     "vbe_sat_V": 1.2,
     "vce_sat_V": 0.3,
     "motor_current_A": 0.1,
-    "rbase_ohm": 1000.0,
+    "rbase_ohm": 330.0,
     "forced_beta_target": 10.0
   },
   "base_drive": {
-    "base_current_mA": 3.8,
-    "forced_beta": 26.32,
+    "base_current_mA": 11.515,
+    "forced_beta": 8.68,
     "max_base_resistor_for_target_ohm": 380.0,
-    "base_resistor_power_mW": 14.44,
+    "base_resistor_power_mW": 43.758,
     "nano_pin_limit_mA": 20.0,
-    "pin_current_margin_mA": 16.2
+    "pin_current_margin_mA": 8.485
   },
   "output_stage": {
     "motor_voltage_V": 4.7,
@@ -40,7 +40,8 @@
   "usb_budget_margin_mA": 341.4,
   "checks": {
     "base_current_within_nano_pin": true,
-    "forced_beta_at_least_10": true,
+    "forced_beta_at_most_10": true,
+    "base_resistor_within_saturation_limit": true,
     "base_resistor_at_least_220_ohm": true,
     "led_current_within_nano_pin": true,
     "power_budget_within_usb": true,

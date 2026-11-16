@@ -85,8 +85,8 @@ physical board was assembled.
 - Portable types, configuration, median filter, obstacle detector, safety
   monitor, alert policy, pulse timer, controller and telemetry formatter.
 - Arduino adapters for sensor, haptic, audio, LED and serial.
-- Non-blocking main loop with 60 ms scans, 5 ms button polling, scheduled outputs
-  and 500/250 ms telemetry.
+- Cooperative main loop with 60 ms scans, 5 ms button polling, scheduled outputs
+  and 500/250 ms telemetry; `pulseIn` is a bounded 25 ms blocking exception.
 - Three modes: Assist, Quiet, Diagnostic.
 - Fault/recovery policy and explicit `free=1` assertion.
 
@@ -111,11 +111,15 @@ RAM:     779 /  2,048 bytes (38.0%)
 SUCCESS
 ```
 
+This is the pre-audit M3 build. The audit removed an unused configuration field
+and the final build is 10,766 B flash / 777 B RAM.
+
 **Failures / notes**
 
 - `pulseIn` remains a bounded blocking call (up to 25 ms). This is documented as a
   limitation and a future input-capture improvement, not hidden.
-- `modeAnnounceMs` is reserved and unused.
+- `modeAnnounceMs` was reserved and unused at this milestone; it was removed by
+  the audit rather than left as dead configuration.
 
 ## 5. M4 — Wokwi virtual circuit
 
@@ -214,9 +218,11 @@ python simulation/simulide/plot_driver.py
 
 **Result**
 
-- All six DC margin checks pass.
-- ngspice: 4.16 mA base, 103.7 mA motor, 0.124 V Vce, 5.77 V flyback clamp,
-  103.6 mA diode peak.
+- The pre-audit M6 run reported six DC margin checks passing with a 1 kΩ base
+  resistor and ngspice at 4.16 mA base, 103.7 mA motor, 0.124 V Vce and 5.77 V
+  clamp. The audit found that the check treated a *higher* forced beta as a pass
+  and that 1 kΩ was above the 380 Ω saturation limit; see M10 and
+  [`circuit-explanation.md`](circuit-explanation.md).
 
 **Blocker**
 
@@ -291,7 +297,7 @@ DRC: 0 violations, 0 unconnected pads, 0 schematic parity issues
 **Verification**
 
 - Rebuilt the Nano firmware after all code changes.
-- Re-ran 18 native tests.
+- Re-ran the native tests (18 at this milestone; 25 after the audit).
 - Re-ran both validators.
 - Re-ran ERC and DRC after schematic/PCB changes.
 - Re-exported Gerbers, drill, STEP and 3D renders after the final PCB generation.
@@ -321,22 +327,55 @@ DRC: 0 violations, 0 unconnected pads, 0 schematic parity issues
 - The Wokwi job skips with a notice when the secret is absent and never prints or
   commits the token.
 
-## 11. Summary of results
+## 11. M10 — Independent engineering audit and final verification
+
+**Implemented**
+
+- Independent review of repository structure, firmware, electrical design,
+  Wokwi assets, manufacturing outputs, CI and documentation.
+- Corrected the inverted forced-beta check and changed R1 from 1 kΩ to 330 Ω;
+  regenerated the schematic, netlist, PCB, Gerbers, drill, STEP, plots and 3D
+  renders.
+- Removed the optional H5–H6 BOM row that was not represented in the schematic or
+  PCB; the BOM is now 15 design rows.
+- Moved C2 to provide mechanical clearance from C1 and rerouted the +5 V stub;
+  DRC remains clean.
+- Added an explicit board title-block revision (0.1), removed dead configuration,
+  added overflow-safe echo conversion, and expanded the native suite from 18 to
+  25 tests.
+- Strengthened Wokwi validation from “connections exist” to exact GPIO and
+  per-diagram stimulus mappings.
+
+**Results**
+
+- Nano build: PASS, 10,766 B flash / 777 B RAM.
+- Native tests: PASS, 25/25.
+- ERC: PASS, 0 errors/0 warnings.
+- DRC: PASS, 0 violations, 0 unconnected pads, 0 parity issues.
+- Structural validators: PASS, 6 diagrams with explicit mappings; 12 nets, 19
+  components, 15 BOM rows and 8 Wokwi links agree.
+- ngspice: 12.34 mA base, 104.4 mA motor, 0.094 V Vce, 5.77 V clamp, 104.3 mA
+  diode peak.
+- Wokwi execution and remote CI remain unexecuted/not observed.
+
+## 12. Summary of results
 
 | Area | Result |
 |---|---|
-| Firmware build | PASS, 10,766 B flash / 779 B RAM |
-| Native tests | PASS, 18/18 |
-| Wokwi structure | PASS, 6 diagrams, 0 warnings |
+| Firmware build | PASS, 10,766 B flash / 777 B RAM |
+| Native tests | PASS, 25/25 |
+| Wokwi structure | PASS, 6 diagrams with explicit pin/stimulus mappings, 0 warnings |
 | Wokwi execution | NOT RUN |
 | ERC | PASS, 0/0 |
 | DRC | PASS, 0/0/0 parity |
 | Cross-artifact | PASS |
+| Driver margins | PASS, 330 Ω, forced beta 8.68 |
 | ngspice | EXECUTED |
 | SimulIDE | NOT EXECUTED (not installed) |
+| Remote GitHub Actions | NOT OBSERVED |
 | Physical validation | NOT PERFORMED |
 
-## 12. Next steps (not part of this reconstruction)
+## 13. Next steps (not part of this reconstruction)
 
 1. Build and bench-test the board with a real HC-SR04, motor and buzzer.
 2. Measure motor current, stall current, vibration amplitude and sound pressure.

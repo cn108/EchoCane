@@ -17,7 +17,7 @@ assembled.
 | J1 | 1×4, 2.54 mm header | `PinHeader_1x04_P2.54mm_Vertical` | HC-SR04 VCC/TRIG/ECHO/GND |
 | J2 | 1×2, 2.54 mm header | `PinHeader_1x02_P2.54mm_Vertical` | Vibration motor, polarity not critical but documented |
 | Q1 | PN2222A NPN, TO-92 | `TO-92_Inline` | Low-side switch; generous 800 mA collector rating vs ~100 mA load |
-| R1 | 1 kΩ, 0.25 W | `R_Axial_DIN0207` | Base current limit; 3.8 mA from a 5 V pin |
+| R1 | 330 Ω, 0.25 W | `R_Axial_DIN0207` | Base current limit; 11.5 mA from a 5 V pin at the conservative Vbe assumption |
 | R2 | 10 kΩ, 0.25 W | `R_Axial_DIN0207` | Base pull-down, keeps Q1 off during boot |
 | D1 | 1N4007 | `D_DO-41_SOD81` | Flyback clamp for the inductive motor |
 | C1 | 100 nF ceramic | `C_Disc_D5.0mm_W2.5mm_P5.00mm` | High-frequency motor decoupling |
@@ -29,7 +29,7 @@ assembled.
 | R4 | 100 Ω, 0.25 W | `R_Axial_DIN0207` | Buzzer series limit |
 | BZ1 | 5 V piezo buzzer | `Buzzer_12x9.5RM7.6` | Optional audible warning |
 | H1–H4 | M3 mounting holes, 3.2 mm | `MountingHole_3.2mm_M3` | Mechanical mounting; excluded from BOM |
-| H5–H6 | Optional 1×15 socket headers | `PinSocket_1x15_P2.54mm_Vertical` | Allows the Nano to be socketed; BOM option only |
+| H5–H6 | Optional 1×15 socket headers (not in the design BOM) | `PinSocket_1x15_P2.54mm_Vertical` | Allows the Nano to be socketed; source separately if required |
 
 The KiCad symbols are generic library symbols (`Device:R`, `Device:C`,
 `Device:LED`, `Transistor_BJT:Q_NPN_EBC`, `MCU_Module:Arduino_Nano_v2.x`). The
@@ -39,11 +39,12 @@ ratings, current ratings and a second-source plan.
 
 ### 2.1 Why a BJT, not a MOSFET?
 
-A PN2222A is inexpensive, through-hole and easy to hand-solder. At ~100 mA it
-needs only 3.8 mA of base drive with a 1 kΩ resistor, well within a Nano pin. A
+A PN2222A is inexpensive, through-hole and easy to hand-solder. At ~100 mA the
+conservative design calculation gives 11.5 mA of base drive with a 330 Ω
+resistor, well within the Nano's recommended 20 mA continuous pin limit. A
 logic-level MOSFET would be more efficient but is unnecessary at this current and
-adds gate-drive/ESD considerations. The BJT dissipates about 13 mW in the
-simulated on-state.
+adds gate-drive/ESD considerations. The BJT dissipates about 9.8 mW in the
+simulated on-state; the paper calculation uses a conservative 30 mW.
 
 ## 3. Pin assignment
 
@@ -184,7 +185,8 @@ so footprint-filter mismatch is expected and is documented rather than hidden.
 - The motor driver (Q1, R1, R2, D1, J2) is on the right, close to the motor
   connector and the +5 V/GND distribution.
 - BZ1 and R4 are at the top right, away from the ultrasonic connector.
-- C1/C2 are near the motor supply.
+- C1/C2 are near the motor supply. The audit moved C2 to (90, 50) mm so the two
+  5 mm bodies have visible mechanical clearance; C1 remains at (80, 45) mm.
 - H1–H4 are at the corners.
 
 ### 6.2 Routing
@@ -230,7 +232,6 @@ parity check is clean.
 
 ```text
 Width 100.0000 mm, height 85.0000 mm, area 8500 mm²
-Front copper area 348.139 mm², back copper area 324.752 mm²
 63 through-hole pads, 4 NPTH, 0 vias
 15 THT footprints + 4 mounting holes
 ```
@@ -268,9 +269,21 @@ The KiCad library installed in the container does not include the Arduino Nano
 module's vendor STEP model (`Module.3dshapes/Arduino_Nano_WithMountingHoles.step`).
 The board and all other available component models are in the STEP and renders;
 A1 appears as its footprint/outline. This is a library limitation, not a PCB
-error.
+error. A CC0 candidate Nano model (`g200kg/kicad-lib-arduino`, x3d) was located
+during the audit, but its dimensions and origin were not independently verified;
+it is therefore not included in this revision. See the limitations register.
 
-## 8. Verification summary
+## 8. Independent audit corrections
+
+The independent audit changed R1 from 1 kΩ to **330 Ω** after finding that the
+driver-margin check had the forced-beta inequality backwards; details and
+recalculated/SPICE results are in [`audit-report.md`](audit-report.md) and
+[`circuit-explanation.md`](circuit-explanation.md). It also removed the optional
+H5–H6 BOM row, moved C2 to provide body clearance from C1, restored the board
+title/revision metadata, and regenerated every manufacturing and plot output from
+the corrected board. DRC and ERC remained clean after the changes.
+
+## 9. Verification summary
 
 | Check | Result |
 |---|---|
@@ -280,7 +293,9 @@ error.
 | Schematic parity | 0 issues |
 | Cross-artifact pin/net/BOM check | PASS |
 | Board statistics | Generated |
-| Gerbers/drill/STEP | Generated |
+| Gerbers/drill/STEP | Generated; Gerber content matches the current board except timestamp metadata |
+| BOM | 15 electrical rows; optional H5–H6 headers are not in the design BOM |
+| Independent engineering audit | PASS for available checks; see [`audit-report.md`](audit-report.md) |
 | Fabrication/assembly test | **Not performed** |
 | Electrical bench test | **Not performed** |
 

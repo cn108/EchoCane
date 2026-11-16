@@ -39,8 +39,7 @@ class EchoCaneController {
   AlertLevel level() const { return last_.level; }
 
  private:
-  AlertUpdate compose(const DistanceReading& reading, AlertLevel level,
-                      bool hasDistance, uint16_t filteredCm,
+  AlertUpdate compose(AlertLevel level, bool hasDistance, uint16_t filteredCm,
                       ReadingStatus rawStatus, uint16_t rawCm) const;
 
   const AppConfig& config_;

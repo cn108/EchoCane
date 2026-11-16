@@ -11,7 +11,7 @@ diagrams are used instead of a scripted moving obstacle.
 | 02 | Caution range | `diagrams/caution.json` | 120 cm | `level=CAUTION`, `free=0` | **NOT RUN** |
 | 03 | Danger range | `diagrams/danger.json` | 50 cm | `level=DANGER`, `free=0` | **NOT RUN** |
 | 04 | Sensor fault | `diagrams/sensor_fault.json` | ECHO tied to GND | `health=DEGRADED`, then `level=FAULT` / `health=FAULT`, `free=0` | **NOT RUN** |
-| 05 | Mode button | `diagrams/mode_button.json` | 120 cm + button press | `mode=QUIET`, then `mode=DIAGNOSTIC` | **NOT RUN** |
+| 05 | Mode button | `diagrams/mode_button.json` | 300 cm + button press | `mode=QUIET`, then `mode=DIAGNOSTIC` | **NOT RUN** |
 | 06 | Moving away | main `diagram.json` | manual 45 → 120 → 300 cm | `DANGER` → `CAUTION` → `CLEAR` | **MANUAL PROCEDURE** |
 
 ## Why no automated moving-away scenario?
@@ -49,8 +49,9 @@ print the token.
 2. Start the main diagram at 300 cm; confirm `level=CLEAR`, `free=1`.
 3. Set the HC-SR04 slider to 45 cm; confirm `level=DANGER`, `free=0`, and the
    strong haptic/buzzer pattern.
-4. Increase to 90 cm; confirm the danger state releases to `CAUTION` (not
-   immediately clear).
+4. Increase to 91 cm; confirm the danger state releases to `CAUTION` (not
+   immediately clear). At exactly 90 cm the danger state is retained by the
+   `> 90 cm` release rule.
 5. Increase to 120 cm; confirm `CAUTION`.
 6. Increase to 170 cm; confirm `CLEAR`, `free=1`.
 7. Record the serial log and the Wokwi version. Until then, this procedure is

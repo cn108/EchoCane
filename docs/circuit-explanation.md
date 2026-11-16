@@ -45,9 +45,11 @@ The HC-SR04 is a 5 V module:
 
 Firmware sends a 10 µs pulse on D9 and measures ECHO on D10 with a 25,000 µs
 timeout. The timeout is deliberately above the 23.2 ms maximum so a valid 400 cm
-echo is not truncated. If ECHO never rises, `pulseIn` returns 0 and the reading is
-`Timeout`. If the computed distance is below 2 cm or above 400 cm, the reading is
-`OutOfRange`.
+echo is not truncated at the 20 °C approximation. If ECHO never rises, `pulseIn`
+returns 0 and the reading is `Timeout`. If the computed distance is below 2 cm or
+above 400 cm, the reading is `OutOfRange`. The 343 m/s assumption is temperature-
+dependent; at lower temperatures a 400 cm echo can approach the 25 ms limit. That
+margin is documented, not measured.
 
 The ECHO output is a 5 V logic signal. The Nano is a 5 V board, so no level
 shifter is required. If a 3.3 V controller were substituted, a divider or level
@@ -60,7 +62,7 @@ shifter would be mandatory.
                                   │
                                   ├── D1 anode; D1 cathode to +5 V
                                   │
-D6 ── R1 1 kΩ ── Q1 base          │
+D6 ── R1 330 Ω ── Q1 base          │
                     │             │
                    R2 10 kΩ      Q1 emitter ── GND
                     │
@@ -77,22 +79,23 @@ Using a conservative saturated base-emitter voltage of 1.2 V:
 
 ```text
 Ib = (Vdrive − Vbe) / R1
-   = (5.0 − 1.2) / 1000
-   = 3.8 mA
+   = (5.0 − 1.2) / 330
+   = 11.5 mA
 ```
 
 The ngspice model, with a Gummel-Poon transistor model, produced:
 
 ```text
-Ib = 4.16 mA
-Vbe = 0.840 V
+Ib = 12.34 mA
+Vbe = 0.926 V
 ```
 
-Both are below the Nano's 20 mA absolute maximum per pin and leave a large
-margin. The 1 kΩ resistor dissipates at most:
+Both are below the ATmega328P's recommended 20 mA continuous current per pin
+(the absolute maximum is 40 mA) and leave margin. The 330 Ω resistor dissipates
+at most:
 
 ```text
-P_R1 = (5.0 − 1.2)² / 1000 = 14.4 mW
+P_R1 = (5.0 − 1.2)² / 330 = 43.8 mW
 ```
 
 ### 3.2 Forced beta and load current
@@ -100,20 +103,21 @@ P_R1 = (5.0 − 1.2)² / 1000 = 14.4 mW
 For a 100 mA motor:
 
 ```text
-forced beta = Ic / Ib = 100 mA / 3.8 mA = 26.3
+forced beta = Ic / Ib = 100 mA / 11.5 mA = 8.7
 ```
 
-A forced beta of 10 is normally sufficient for hard saturation. The maximum base
-resistor for that target is:
+A forced beta at or below 10 is the conservative target for hard saturation. The
+maximum base resistor for that target is:
 
 ```text
 R1(max) = (5.0 − 1.2) / (100 mA / 10) = 380 Ω
 ```
 
-1 kΩ is a deliberate compromise: it is above the 380 Ω minimum for a forced
-beta of 10, keeps base current low, and still provides ample gain for a PN2222A.
-If a lower-gain transistor or a larger motor were used, R1 should be reduced and
-the base current recalculated.
+330 Ω is below the 380 Ω limit, so the design meets its forced-beta target with
+margin. The earlier 1 kΩ value was above the limit; the audit corrected both the
+value and the sign of the design-margin check. If a lower-gain transistor or a
+larger motor were used, R1 should be reduced further and the base current
+recalculated against the Nano pin limit.
 
 ### 3.3 Output stage
 
@@ -121,14 +125,17 @@ The ngspice transient model uses a 47 Ω / 10 mH motor and a 20 ms drive pulse:
 
 | Quantity | Result |
 |---|---|
-| Motor current, on | 103.7 mA |
-| Collector-emitter voltage, on | 0.124 V |
-| Transistor dissipation, on | 12.9 mW |
-| Motor voltage, on | 4.88 V |
+| Base current, drive high | 12.34 mA |
+| Base-emitter voltage | 0.926 V |
+| Motor current, on | 104.4 mA |
+| Collector-emitter voltage, on | 0.094 V |
+| Transistor dissipation, on | 9.8 mW |
+| Motor voltage, on | 4.91 V |
 | Collector peak at turn-off | 5.77 V |
-| Flyback diode peak | 103.6 mA |
+| Flyback diode peak | 104.3 mA |
 
-The motor inductance is an assumption. A 47 Ω, 10 mH lumped model gives an
+The motor inductance and the 100 mA load are assumptions. A 47 Ω, 10 mH lumped
+model gives an
 electrical time constant of:
 
 ```text
@@ -228,7 +235,8 @@ The bottom GND zone provides a short return path.
 - The HC-SR04 model does not reproduce acoustic beam width, multipath, soft or
   angled surfaces, or cross-talk.
 - The 5 V USB source, connectors, PCB and assembly have not been physically
-  tested.
+  tested. Motor stall current and starting torque are unknown; the 330 Ω base
+drive is sized for the 100 mA model, not for an arbitrary stall condition.
 - The calculations use generic transistor/diode models and estimated motor
   parameters.
 

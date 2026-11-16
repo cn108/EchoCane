@@ -36,7 +36,7 @@ PLACEMENT = {
     "R2": (50, 68, 0),
     "D1": (70, 55, 0),
     "C1": (80, 45, 0),
-    "C2": (80, 50, 0),
+    "C2": (90, 50, 0),
     "SW1": (8, 30, 0),
     "C3": (18, 36, 0),
     "R3": (35, 62, 0),
@@ -213,6 +213,12 @@ def main() -> int:
     board.SetCopperLayerCount(2)
     design = board.GetDesignSettings()
     design.SetBoardThickness(mm(1.6))
+    title = board.GetTitleBlock()
+    title.SetTitle("EchoCane Carrier Board")
+    title.SetRevision("0.1")
+    title.SetDate("2026-11-16")
+    title.SetCompany("EchoCane virtual reconstruction")
+    title.SetComment(1, "Experimental prototype - not physically validated")
 
     net_items = {}
     for name in sorted(nets):
@@ -365,6 +371,8 @@ def main() -> int:
     add_track(board, net_of("+5V"), b_cu, 0.8, (88, 52), j2_1)
     add_track(board, net_of("+5V"), b_cu, 0.8, (70, 52), d1_k)
     add_track(board, net_of("+5V"), b_cu, 0.8, (80, 52), c1_1)
+    add_track(board, net_of("+5V"), b_cu, 0.8, (88, 52), (90, 52))
+    add_track(board, net_of("+5V"), b_cu, 0.8, (90, 52), c2_1)
 
     # Board outline, mounting holes, and legend.
     add_edge(board, 0, 0, BOARD_W, 0)
@@ -383,7 +391,7 @@ def main() -> int:
 
     # Keep reference fields clear of neighbouring silkscreen and pads.
     footprints["C1"].Reference().SetPosition(point(84, 42))
-    footprints["C2"].Reference().SetPosition(point(80, 56))
+    footprints["C2"].Reference().SetPosition(point(84, 54))
     footprints["Q1"].Reference().SetPosition(point(70, 66))
     footprints["D1"].Reference().SetPosition(point(64, 52))
     footprints["SW1"].Reference().SetPosition(point(16, 26))

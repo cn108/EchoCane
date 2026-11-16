@@ -8,6 +8,7 @@
 #include "echocane/MedianFilter.h"
 #include "echocane/ObstacleDetector.h"
 #include "echocane/PulseTimer.h"
+#include "echocane/SensorMath.h"
 #include "echocane/Telemetry.h"
 
 namespace {
@@ -76,10 +77,6 @@ void test_classification_thresholds() {
 }
 
 void test_caution_hysteresis_release() {
-  TEST_ASSERT_EQUAL_INT(static_cast<int>(AlertLevel::Caution),
-                        static_cast<int>(levelFor(120)));
-  TEST_ASSERT_EQUAL_INT(static_cast<int>(AlertLevel::Caution),
-                        static_cast<int>(levelFor(120)));
   controller.begin();
   feed(120);
   feed(155);
@@ -138,6 +135,91 @@ void test_timeout_confirms_fault() {
                         static_cast<int>(update.level));
   TEST_ASSERT_FALSE(update.obstacleFree);
   TEST_ASSERT_FALSE(update.hasDistance);
+}
+
+void test_echo_pulse_conversion_boundaries() {
+  TEST_ASSERT_EQUAL_UINT32(0, centimetersFromEchoPulse(0));
+  TEST_ASSERT_EQUAL_UINT32(1, centimetersFromEchoPulse(57));
+  TEST_ASSERT_EQUAL_UINT32(1, centimetersFromEchoPulse(58));
+  TEST_ASSERT_EQUAL_UINT32(2, centimetersFromEchoPulse(116));
+  TEST_ASSERT_EQUAL_UINT32(150, centimetersFromEchoPulse(8700));
+  TEST_ASSERT_EQUAL_UINT32(400, centimetersFromEchoPulse(23200));
+  TEST_ASSERT_EQUAL_UINT32(431, centimetersFromEchoPulse(25000));
+}
+
+void test_echo_pulse_conversion_is_overflow_safe() {
+  const uint32_t max = UINT32_MAX;
+  TEST_ASSERT_EQUAL_UINT32(max / 58U, centimetersFromEchoPulse(max));
+  TEST_ASSERT_EQUAL_UINT32(max / 58U, centimetersFromEchoPulse(max - 10U));
+}
+
+void test_danger_and_caution_release_boundaries() {
+  controller.begin();
+  feed(50);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(AlertLevel::Danger),
+                        static_cast<int>(controller.level()));
+  feed(90);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(AlertLevel::Danger),
+                        static_cast<int>(controller.level()));
+  feed(91);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(AlertLevel::Caution),
+                        static_cast<int>(controller.level()));
+  feed(160);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(AlertLevel::Caution),
+                        static_cast<int>(controller.level()));
+  feed(161);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(AlertLevel::Clear),
+                        static_cast<int>(controller.level()));
+}
+
+void test_recovery_returns_clear_after_three_valid_readings() {
+  controller.begin();
+  forceFault();
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(SensorHealth::Fault),
+                        static_cast<int>(controller.health()));
+
+  const AlertUpdate first = controller.update(DistanceReading::valid(300));
+  const AlertUpdate second = controller.update(DistanceReading::valid(300));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(SensorHealth::Fault),
+                        static_cast<int>(first.health));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(SensorHealth::Fault),
+                        static_cast<int>(second.health));
+  TEST_ASSERT_FALSE(first.obstacleFree);
+  TEST_ASSERT_FALSE(second.obstacleFree);
+
+  const AlertUpdate third = controller.update(DistanceReading::valid(300));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(SensorHealth::Ok),
+                        static_cast<int>(third.health));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(AlertLevel::Clear),
+                        static_cast<int>(third.level));
+  TEST_ASSERT_TRUE(third.obstacleFree);
+}
+
+void test_degraded_recovery_holds_caution_until_three_valid_readings() {
+  controller.begin();
+  controller.update(DistanceReading::timeout());
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(SensorHealth::Degraded),
+                        static_cast<int>(controller.health()));
+
+  const AlertUpdate first = controller.update(DistanceReading::valid(300));
+  const AlertUpdate second = controller.update(DistanceReading::valid(300));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(SensorHealth::Degraded),
+                        static_cast<int>(first.health));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(SensorHealth::Degraded),
+                        static_cast<int>(second.health));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(AlertLevel::Caution),
+                        static_cast<int>(first.level));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(AlertLevel::Caution),
+                        static_cast<int>(second.level));
+  TEST_ASSERT_FALSE(first.obstacleFree);
+  TEST_ASSERT_FALSE(second.obstacleFree);
+
+  const AlertUpdate third = controller.update(DistanceReading::valid(300));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(SensorHealth::Ok),
+                        static_cast<int>(third.health));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(AlertLevel::Clear),
+                        static_cast<int>(third.level));
+  TEST_ASSERT_TRUE(third.obstacleFree);
 }
 
 void test_fault_never_reports_obstacle_free() {
@@ -262,6 +344,18 @@ void test_pulse_timer() {
   TEST_ASSERT_FALSE(timer.output(300));
 }
 
+void test_pulse_timer_handles_millis_rollover() {
+  PulseTimer timer;
+  const uint32_t start = UINT32_MAX - 50U;
+  timer.reset(0);
+  timer.configure(100, 200, false, start);
+  TEST_ASSERT_TRUE(timer.output(start));
+  TEST_ASSERT_TRUE(timer.output(UINT32_MAX));
+  TEST_ASSERT_FALSE(timer.output(49U));
+  TEST_ASSERT_FALSE(timer.output(248U));
+  TEST_ASSERT_TRUE(timer.output(249U));
+}
+
 void test_telemetry_clear_record() {
   controller.begin();
   feed(300);
@@ -270,6 +364,9 @@ void test_telemetry_clear_record() {
   const size_t length = formatTelemetry(buffer, sizeof(buffer), 1234, update);
   TEST_ASSERT_TRUE(length > 0);
   TEST_ASSERT_NOT_NULL(strstr(buffer, "EC|t=1234"));
+  TEST_ASSERT_NOT_NULL(strstr(buffer, "raw=OK"));
+  TEST_ASSERT_NOT_NULL(strstr(buffer, "d=300"));
+  TEST_ASSERT_NOT_NULL(strstr(buffer, "f=300"));
   TEST_ASSERT_NOT_NULL(strstr(buffer, "level=CLEAR"));
   TEST_ASSERT_NOT_NULL(strstr(buffer, "health=OK"));
   TEST_ASSERT_NOT_NULL(strstr(buffer, "mode=ASSIST"));
@@ -298,6 +395,15 @@ void test_telemetry_truncates_safely() {
   TEST_ASSERT_EQUAL_INT('\0', buffer[length]);
 }
 
+void test_telemetry_zero_capacity_is_safe() {
+  controller.begin();
+  const AlertUpdate update = controller.update(DistanceReading::valid(100));
+  TEST_ASSERT_EQUAL_UINT32(0, formatTelemetry(nullptr, 0, 0, update));
+  char buffer[1] = {'X'};
+  TEST_ASSERT_EQUAL_UINT32(0, formatTelemetry(buffer, sizeof(buffer), 0, update));
+  TEST_ASSERT_EQUAL_INT('\0', buffer[0]);
+}
+
 int main(int, char**) {
   UNITY_BEGIN();
   RUN_TEST(test_median_filter_rejects_isolated_spike);
@@ -306,7 +412,12 @@ int main(int, char**) {
   RUN_TEST(test_caution_hysteresis_release);
   RUN_TEST(test_danger_hysteresis_release);
   RUN_TEST(test_single_spike_is_filtered);
+  RUN_TEST(test_echo_pulse_conversion_boundaries);
+  RUN_TEST(test_echo_pulse_conversion_is_overflow_safe);
+  RUN_TEST(test_danger_and_caution_release_boundaries);
   RUN_TEST(test_timeout_confirms_fault);
+  RUN_TEST(test_recovery_returns_clear_after_three_valid_readings);
+  RUN_TEST(test_degraded_recovery_holds_caution_until_three_valid_readings);
   RUN_TEST(test_fault_never_reports_obstacle_free);
   RUN_TEST(test_recovery_requires_consecutive_valid_readings);
   RUN_TEST(test_out_of_range_counts_as_failure);
@@ -315,8 +426,10 @@ int main(int, char**) {
   RUN_TEST(test_alert_pattern_selection);
   RUN_TEST(test_mode_cycling);
   RUN_TEST(test_pulse_timer);
+  RUN_TEST(test_pulse_timer_handles_millis_rollover);
   RUN_TEST(test_telemetry_clear_record);
   RUN_TEST(test_telemetry_fault_record_not_free);
   RUN_TEST(test_telemetry_truncates_safely);
+  RUN_TEST(test_telemetry_zero_capacity_is_safe);
   return UNITY_END();
 }

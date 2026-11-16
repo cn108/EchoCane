@@ -85,7 +85,7 @@ thresholds and must not be presented as such.
 |---|---|---|
 | HR-01 | Use a classic 5 V Arduino Nano (ATmega328P, 30-pin) as the controller. | PlatformIO target; BOM; schematic |
 | HR-02 | Use the pin map in `Pins.h` consistently across firmware, Wokwi and KiCad. | `tests/validate_hardware.py` |
-| HR-03 | Switch the motor with a PN2222A NPN low-side stage, 1 kΩ base resistor and 10 kΩ pull-down. | Schematic; ngspice |
+| HR-03 | Switch the motor with a PN2222A NPN low-side stage, a 330 Ω base resistor and a 10 kΩ pull-down. | Schematic; ngspice; driver margin check |
 | HR-04 | Include a 1N4007 flyback diode across the motor. | Schematic; ngspice transient |
 | HR-05 | Decouple the motor supply with 100 nF ceramic and 10 µF bulk capacitance. | Schematic; PCB |
 | HR-06 | Expose the HC-SR04 and motor through keyed/clear 2.54 mm headers. | Schematic; PCB |
@@ -101,8 +101,8 @@ thresholds and must not be presented as such.
 |---|---|---|
 | NFR-01 | Keep application policy independent of Arduino headers. | `firmware/lib/echocane_core` has no `Arduino.h` |
 | NFR-02 | Avoid dynamic allocation in the firmware. | No `new`, `malloc` or STL containers in firmware |
-| NFR-03 | Fit the Nano's 2 KB RAM and 30 KB flash with margin. | 779 B RAM (38 %), 10,766 B flash (35 %) |
-| NFR-04 | Provide host tests for every safety-relevant policy. | 18/18 native tests |
+| NFR-03 | Fit the Nano's 2 KB RAM and 30 KB flash with margin. | 777 B RAM (37.9 %), 10,766 B flash (35 %) |
+| NFR-04 | Provide host tests for every safety-relevant policy. | 25/25 native tests |
 | NFR-05 | Keep the main loop free of long unbounded delays. | Scheduled scans/outputs; bounded `pulseIn` timeout |
 | NFR-06 | Make hardware assumptions and simulation limits explicit. | README; limitations; safety analysis |
 | NFR-07 | Support local builds/tests without Wokwi or a paid token. | `pio` build/test; structural validators |
@@ -138,7 +138,7 @@ above 400 cm are `OutOfRange`.
 ### 6.3 Telemetry record
 
 ```text
-EC|t=<ms>|raw=<Valid|Timeout|OutOfRange>|d=<cm|none>|f=<cm|none>|level=<...>|health=<...>|mode=<...>|free=<0|1>
+EC|t=<ms>|raw=<OK|TIMEOUT|OUT_OF_RANGE>|d=<cm|none>|f=<cm|none>|level=<...>|health=<...>|mode=<...>|free=<0|1>
 ```
 
 `free=1` is an explicit assertion that the path is believed clear. It is never
@@ -149,14 +149,15 @@ set from a failed acquisition.
 | Criterion | Status |
 |---|---|
 | Nano firmware compiles | **PASS** |
-| Core logic passes automated tests | **PASS** (18/18) |
-| Wokwi files open and are structurally valid | **PASS** (structure only) |
+| Core logic passes automated tests | **PASS** (25/25) |
+| Wokwi files open and are structurally valid | **PASS** (structure and explicit pin/stimulus mappings; not executed) |
 | All required obstacle scenarios demonstrated | **NOT EXECUTED** (assets provided) |
 | Sensor failures handled correctly | **PASS** in host tests; hardware unverified |
 | KiCad schematic complete and consistent with firmware | **PASS** (ERC 0; cross-artifact check) |
 | PCB exists and passes configured DRC | **PASS** (0/0/0) |
 | Manufacturing outputs generated | **PASS** (files present; not fabricated) |
 | Engineering documentation complete | **PASS** |
+| Independent engineering audit completed | **PASS** for available checks; physical/external checks open |
 | GitHub Actions configured and available checks pass | **CONFIGURED**; GitHub run not observed here |
 | Screenshots and test evidence included | **PASS** for build/tests/PCB; Wokwi screenshots absent |
 | Limitations honestly documented | **PASS** |

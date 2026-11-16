@@ -2,7 +2,7 @@
 	(version "E")
 	(design
 		(source "/work/hardware/kicad/EchoCane.kicad_sch")
-		(date "2026-11-15T23:48:31")
+		(date "2026-11-16T00:37:56")
 		(tool "Eeschema 10.0.8")
 		(sheet
 			(number "1")
@@ -12,7 +12,7 @@
 				(title "EchoCane Carrier Board")
 				(company "EchoCane virtual reconstruction")
 				(rev "0.1")
-				(date "2026-11-15")
+				(date "2026-11-16")
 				(source "EchoCane.kicad_sch")
 				(comment
 					(number "1")
@@ -885,7 +885,7 @@
 		)
 		(comp
 			(ref "R1")
-			(value "1k")
+			(value "330")
 			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
 			(description "Base current limit resistor")
 			(fields

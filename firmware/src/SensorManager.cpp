@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 
+#include "echocane/SensorMath.h"
+
 namespace echocane {
 
 SensorManager::SensorManager(uint8_t trigPin, uint8_t echoPin,
@@ -32,7 +34,7 @@ DistanceReading SensorManager::read() {
   }
 
   // Speed of sound at ~20 C: 343 m/s. Round trip -> microseconds / 58 = cm.
-  const uint32_t centimeters = (durationUs + 29UL) / 58UL;
+  const uint32_t centimeters = centimetersFromEchoPulse(durationUs);
 
   if (centimeters < minValidCm_ || centimeters > maxValidCm_) {
     const uint16_t reported =

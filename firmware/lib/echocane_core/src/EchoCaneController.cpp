@@ -31,8 +31,7 @@ AlertUpdate EchoCaneController::begin() {
   detector_.reset();
   mode_ = SystemMode::Assist;
 
-  const DistanceReading none = DistanceReading::timeout();
-  AlertUpdate update = compose(none, AlertLevel::Starting, false, 0,
+  AlertUpdate update = compose(AlertLevel::Starting, false, 0,
                                ReadingStatus::Timeout, 0);
   last_ = update;
   return update;
@@ -72,7 +71,7 @@ AlertUpdate EchoCaneController::update(const DistanceReading& reading) {
     }
   }
 
-  AlertUpdate update = compose(reading, level, hasDistance, filteredCm,
+  AlertUpdate update = compose(level, hasDistance, filteredCm,
                                reading.status, reading.centimeters);
   last_ = update;
   return update;
@@ -97,8 +96,7 @@ SystemMode EchoCaneController::cycleMode() {
   return mode_;
 }
 
-AlertUpdate EchoCaneController::compose(const DistanceReading& reading,
-                                        AlertLevel level, bool hasDistance,
+AlertUpdate EchoCaneController::compose(AlertLevel level, bool hasDistance,
                                         uint16_t filteredCm,
                                         ReadingStatus rawStatus,
                                         uint16_t rawCm) const {
@@ -114,7 +112,6 @@ AlertUpdate EchoCaneController::compose(const DistanceReading& reading,
                         (level == AlertLevel::Clear) &&
                         (rawStatus == ReadingStatus::Valid) && hasDistance;
   update.command = makeAlertCommand(level, mode_, config_);
-  (void)reading;
   return update;
 }
 

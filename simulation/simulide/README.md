@@ -19,13 +19,13 @@ Executed result (ngspice-39, generic models):
 
 | Quantity | Result |
 |---|---|
-| Base current, drive high | 4.16 mA |
-| Base-emitter voltage | 0.840 V |
-| Collector-emitter voltage, on | 0.124 V |
-| Motor current, on | 103.7 mA |
+| Base current, drive high | 12.34 mA |
+| Base-emitter voltage | 0.926 V |
+| Collector-emitter voltage, on | 0.094 V |
+| Motor current, on | 104.4 mA |
 | Collector peak at turn-off | 5.77 V |
-| Flyback diode peak | 103.6 mA |
-| Transistor dissipation, on | 12.9 mW (0.124 V × 103.7 mA) |
+| Flyback diode peak | 104.3 mA |
+| Transistor dissipation, on | 9.8 mW (0.094 V × 104.4 mA) |
 
 These values come from `driver.cir`; see `ngspice-results.txt` and
 `driver-waveform-sampled.csv`. They are simulation output for a lumped motor
@@ -38,7 +38,7 @@ model, not bench measurements.
 | +5 V rail | J2 pin 1 / motor + | 5 V |
 | Motor − | Q1 collector | PN2222A (TO-92) |
 | Q1 emitter | GND | — |
-| Nano D6 | R1 | 1 kΩ |
+| Nano D6 | R1 | 330 Ω |
 | R1 other end | Q1 base | — |
 | Q1 base | GND | R2 10 kΩ |
 | Motor + | D1 cathode | 1N4007 |
@@ -72,7 +72,7 @@ void loop() {
 
 1. Install SimulIDE 1.x and the Arduino toolchain it expects (the official
    SimulIDE guide recommends a working Arduino IDE 1.8.x installation).
-2. Place the Nano, PN2222A, 1N4007, 1 kΩ, 10 kΩ, the two capacitors and a DC
+2. Place the Nano, PN2222A, 1N4007, 330 Ω, 10 kΩ, the two capacitors and a DC
    motor. Connect them as in the table above.
 3. Set the motor model's nominal voltage to 5 V and its resistance to
    approximately 47 Ω so the steady current is about 100 mA.
@@ -87,7 +87,7 @@ void loop() {
 ## Executed alternative: ngspice
 
 `driver.cir` is a first-order transient model of the driver. It includes a
-47 Ω / 10 mH motor, PN2222A Gummel-Poon model, 1N4007 diode model, 1 kΩ base
+47 Ω / 10 mH motor, PN2222A Gummel-Poon model, 1N4007 diode model, 330 Ω base
 resistor and 5 V PWM source. Run it with:
 
 ```

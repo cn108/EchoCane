@@ -11,7 +11,9 @@ parts with automation controls, so this scenario cannot be driven by a
 2. Set the HC-SR04 slider to **45 cm**. Confirm `level=DANGER` in the serial
    monitor.
 3. Move the slider to **120 cm** and confirm `level=CAUTION`.
-4. Move the slider to **300 cm** and confirm `level=CLEAR`, `free=1`.
+4. Move the slider to **300 cm** and confirm `level=CLEAR`, `free=1`. The release
+   threshold is strictly greater than 160 cm, so use 161+ cm if checking the
+   boundary.
 5. Move back to **140 cm** and confirm `level=CAUTION`, then **155 cm** and
    confirm it stays `CAUTION` until you pass **160 cm** (hysteresis release).
 
@@ -19,5 +21,7 @@ Expected evidence: serial lines with `level=DANGER`, then `level=CAUTION`, then
 `level=CLEAR`, then `level=CAUTION` again. Record a screen capture or save the
 serial log; do not claim this test passed without that evidence.
 
-The host test `test_danger_hysteresis_release` covers the same 50 -> 85 -> 91 cm
+The host test `test_danger_hysteresis_release` covers the 50 -> 85 -> 91 cm
 sequence at the application-logic level, but it does not prove sensor timing.
+The exact release boundaries are now also covered by
+`test_danger_and_caution_release_boundaries`.

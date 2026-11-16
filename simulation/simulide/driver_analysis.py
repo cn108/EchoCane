@@ -14,7 +14,7 @@ VCC = 5.0
 VBE_SAT = 1.2
 VCE_SAT = 0.3
 MOTOR_CURRENT_A = 0.10
-RBASE_OHM = 1000.0
+RBASE_OHM = 330.0
 RBASE_PULLDOWN_OHM = 10000.0
 FORCED_BETA_TARGET = 10.0
 NANO_PIN_LIMIT_A = 0.020
@@ -82,7 +82,10 @@ def main() -> int:
 
     checks = {
         "base_current_within_nano_pin": base_current < NANO_PIN_LIMIT_A,
-        "forced_beta_at_least_10": forced_beta >= FORCED_BETA_TARGET,
+        # A lower forced beta means more base current. For hard saturation the
+        # forced beta must be at or below the target, not above it.
+        "forced_beta_at_most_10": forced_beta <= FORCED_BETA_TARGET,
+        "base_resistor_within_saturation_limit": RBASE_OHM <= max_base_resistor,
         "base_resistor_at_least_220_ohm": RBASE_OHM >= 220,
         "led_current_within_nano_pin": led_current < NANO_PIN_LIMIT_A,
         "power_budget_within_usb": budget["total_mA"] < USB_BUDGET_A * 1000,

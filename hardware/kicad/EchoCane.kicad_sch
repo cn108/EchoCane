@@ -6,7 +6,7 @@
 	(paper "A3")
 	(title_block
 		(title "EchoCane Carrier Board")
-		(date "2026-11-15")
+				(date "2026-11-16")
 		(rev "0.1")
 		(company "EchoCane virtual reconstruction")
 		(comment 1 "Experimental prototype — not physically validated")
@@ -3931,7 +3931,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "1k"
+		(property "Value" "330"
 			(at 313.69 161.29 0)
 			(effects
 				(font
@@ -5791,7 +5791,7 @@
 		(instances
 			(project "EchoCane"
 				(path "/dcfb3bb2-a873-5bd7-9648-2840238e2d2e"
-					(reference "#PWR150")
+					(reference "#PWR986")
 					(unit 1)
 				)
 			)
@@ -5877,7 +5877,7 @@
 		(instances
 			(project "EchoCane"
 				(path "/dcfb3bb2-a873-5bd7-9648-2840238e2d2e"
-					(reference "#PWR584")
+					(reference "#PWR698")
 					(unit 1)
 				)
 			)
@@ -5933,7 +5933,7 @@
 		(instances
 			(project "EchoCane"
 				(path "/dcfb3bb2-a873-5bd7-9648-2840238e2d2e"
-					(reference "#FLG486")
+					(reference "#FLG664")
 					(unit 1)
 				)
 			)

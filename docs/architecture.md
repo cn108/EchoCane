@@ -210,7 +210,7 @@ Final Nano build:
 | Resource | Used | Available | Margin |
 |---|---|---|---|
 | Flash | 10,766 B | 30,720 B | 19,954 B (65 %) |
-| RAM | 779 B | 2,048 B | 1,269 B (62 %) |
+| RAM | 777 B | 2,048 B | 1,271 B (62 %) |
 
 The median filter uses a fixed 5-element array and an insertion sort. Telemetry
 uses a fixed `char` buffer. No heap allocation, STL containers or exceptions are
@@ -230,7 +230,7 @@ a 25 ms upper bound.
 | Bounded `pulseIn` | Simple, well understood on AVR | Blocks up to 25 ms |
 | Through-hole carrier | Hand-solderable prototype | Larger board; not size-optimised |
 | USB 5 V only | Avoids unverified Li-ion charging | Tethered operation |
-| Generic KiCad symbols | Reproducible without vendor libraries | No manufacturer 3D model for the Nano |
+| Generic KiCad symbols | Reproducible without vendor libraries | No manufacturer 3D model for the Nano; a CC0 candidate was not independently verified |
 
 ## 10. Extensibility
 

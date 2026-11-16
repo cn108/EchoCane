@@ -7,7 +7,11 @@ on:
       - "firmware/**"
       - "simulation/wokwi/**"
       - "tests/run_wokwi_scenarios.py"
+      - "tests/scenarios.json"
       - ".github/workflows/wokwi.yml"
+
+permissions:
+  contents: read
 
 jobs:
   scenarios:

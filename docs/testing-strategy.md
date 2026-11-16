@@ -31,7 +31,7 @@ Command:
 Result:
 
 ```text
-RAM:   38.0% (used 779 bytes from 2048 bytes)
+RAM:   37.9% (used 777 bytes from 2048 bytes)
 Flash: 35.0% (used 10766 bytes from 30720 bytes)
 SUCCESS
 ```
@@ -53,7 +53,7 @@ Result:
 
 ```text
 native:test_core PASSED
-18 test cases: 18 succeeded
+25 test cases: 25 succeeded
 ```
 
 | # | Test | What it checks |
@@ -72,10 +72,17 @@ native:test_core PASSED
 | 12 | `test_button_debouncing_emits_single_press` | Bounce does not produce repeated mode changes |
 | 13 | `test_alert_pattern_selection` | Correct patterns for clear/caution/danger/fault |
 | 14 | `test_mode_cycling` | Assist → Quiet → Diagnostic → Assist |
-| 15 | `test_pulse_timer` | On/off phase scheduling and rollover-safe timing |
-| 16 | `test_telemetry_clear_record` | Clear record contains `free=1` only when valid |
-| 17 | `test_telemetry_fault_record_not_free` | Fault record never reports free |
-| 18 | `test_telemetry_truncates_safely` | Bounded formatting |
+| 15 | `test_pulse_timer` | On/off phase scheduling and elapsed-time behaviour |
+| 16 | `test_pulse_timer_handles_millis_rollover` | Phase timing survives the 32-bit millis wrap |
+| 17 | `test_echo_pulse_conversion_boundaries` | 0/57/58/116/8700/23200/25000 µs conversions |
+| 18 | `test_echo_pulse_conversion_is_overflow_safe` | Full uint32 input domain does not wrap |
+| 19 | `test_danger_and_caution_release_boundaries` | Exact 90/91 and 160/161 cm release boundaries |
+| 20 | `test_recovery_returns_clear_after_three_valid_readings` | Fault recovery reaches clear on the third valid sample |
+| 21 | `test_degraded_recovery_holds_caution_until_three_valid_readings` | Degraded recovery remains caution for two valid samples |
+| 22 | `test_telemetry_clear_record` | Clear record has `raw=OK`, distances and `free=1` |
+| 23 | `test_telemetry_fault_record_not_free` | Fault record never reports free |
+| 24 | `test_telemetry_truncates_safely` | Bounded formatting |
+| 25 | `test_telemetry_zero_capacity_is_safe` | Null/zero-capacity output is rejected safely |
 
 These tests compile the same `echocane_core` sources used by the Nano build. They
 do not compile the Arduino adapters, which require hardware APIs.
@@ -91,12 +98,14 @@ python tests/validate_simulation.py
 Result:
 
 ```text
-OK: 6 diagrams validated, scenario mappings present, 0 warning(s)
+OK: 6 diagrams validated with explicit pin/stimulus mappings, 0 warning(s)
 ```
 
-This validates JSON structure, required parts, connections, distance ranges,
-scenario-to-diagram mappings and firmware build presence. It does **not** execute
-the simulator. The firmware `.hex`/`.elf` were rebuilt before this check.
+This validates JSON structure, required parts, exact Nano GPIO connections,
+the expected HC-SR04 distance for each diagram, the sensor-fault ECHO-to-GND
+variant, scenario-to-diagram mappings and firmware build presence. It does
+**not** execute the simulator. The firmware `.hex`/`.elf` were rebuilt before
+this check.
 
 ### 2.4 Wokwi scenario execution
 
@@ -174,8 +183,10 @@ Found 0 unconnected items
 Found 0 schematic parity issues
 ```
 
-Board statistics are regenerated into
-`hardware/verification/pcb-stats.txt`.
+Board statistics are recorded in
+`hardware/verification/pcb-stats.txt`; the audit refreshed the dimensions and
+pad/drill/component counts and removed stale copper-area figures rather than
+carrying them forward from the previous placement.
 
 ### 2.8 ngspice driver simulation
 
@@ -189,13 +200,13 @@ Result (47 Ω / 10 mH motor model, generic PN2222A/1N4007 models):
 
 | Measurement | Result |
 |---|---|
-| Base current, drive high | 4.16 mA |
-| Base-emitter voltage | 0.840 V |
-| Collector-emitter voltage, on | 0.124 V |
-| Motor current, on | 103.7 mA |
+| Base current, drive high | 12.34 mA |
+| Base-emitter voltage | 0.926 V |
+| Collector-emitter voltage, on | 0.094 V |
+| Motor current, on | 104.4 mA |
 | Collector peak at turn-off | 5.77 V |
-| Flyback diode peak | 103.6 mA |
-| Transistor dissipation | 12.9 mW |
+| Flyback diode peak | 104.3 mA |
+| Transistor dissipation | 9.8 mW |
 
 The model includes a 0 V sense source for motor and diode current. It is a
 lumped electrical model, not a motor or tactile validation. See
@@ -244,24 +255,25 @@ measure real interrupt latency or `millis()` drift.
 
 ### 3.5 Telemetry tests
 
-The formatter is tested for a clear record, a fault record and a small buffer.
-The fault record must contain `free=0`; the clear record may contain `free=1`
-only under the valid/clear conditions.
+The formatter is tested for a clear record (`raw=OK`, distance fields, `free=1`),
+a fault record (`free=0`), truncation and null/zero-capacity safety. The clear
+record may contain `free=1` only under the valid/clear conditions.
 
 ## 4. CI
 
 `.github/workflows/ci.yml` is configured to:
 
-1. Build the Nano firmware.
-2. Run the native tests.
-3. Run both structural validators.
+1. Run the native tests.
+2. Build the Nano firmware (after tests, because the native test task may clean
+   the AVR build directory).
+3. Run both structural validators and the driver-margin calculation.
 4. Run KiCad ERC/DRC in the `kicad/kicad:10.0` container.
-5. Optionally run the Wokwi scenarios when `WOKWI_CLI_TOKEN` is configured.
 
-The CI workflow has not been observed running on GitHub from this environment.
-The local commands above are the executed evidence. The optional Wokwi job is
-separate and skips with a notice when the secret is absent; it never commits the
-token.
+The optional Wokwi workflow is separate (`wokwi.yml`) and runs only when
+`WOKWI_CLI_TOKEN` is configured. Neither workflow has been observed running on
+GitHub from this environment. The local commands above are the executed
+evidence. The Wokwi job skips with a notice when the secret is absent; it never
+commits the token.
 
 ## 5. What is not tested
 
@@ -275,6 +287,7 @@ token.
 | EMC, ESD, thermal, drop, water resistance | Not tested |
 | User perception, ergonomics, cane interaction | Not tested |
 | Long-duration reliability / watchdog | Not tested |
+| Remote GitHub Actions execution | Not observed |
 
 These are engineering gaps, not footnotes. The device remains an experimental
 supplementary aid.

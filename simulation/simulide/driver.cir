@@ -14,7 +14,7 @@
 VCC  vcc 0 DC 5
 VDRIVE drive 0 PULSE(0 5 0 1u 1u 20m 50m)
 
-RB drive base 1k
+RB drive base 330
 Q1 collector base 0 QN2222
 RMOT vcc motor 47
 LMOT motor motor_return 10m

@@ -135,7 +135,7 @@ PARTS: list[Part] = [
     Part(
         "R1",
         "Device:R",
-        "1k",
+        "330",
         55,
         130,
         "Base current limit resistor",
@@ -698,7 +698,7 @@ def generate() -> None:
 \t(paper "{PAPER}")
 \t(title_block
 \t\t(title "EchoCane Carrier Board")
-\t\t(date "2026-11-15")
+\t\t		(date "2026-11-16")
 \t\t(rev "0.1")
 \t\t(company "EchoCane virtual reconstruction")
 \t\t(comment 1 "Experimental prototype — not physically validated")
@@ -725,9 +725,6 @@ def generate() -> None:
             if part.ref.startswith("H"):
                 continue
             writer.writerow([part.ref, part.value, FOOTPRINTS[part.ref], part.description, 1])
-        writer.writerow(
-            ["H5-H6", "1x15 2.54 mm socket header", "Connector_PinSocket_2.54mm:PinSocket_1x15_P2.54mm_Vertical", "Nano sockets (optional)", 2]
-        )
 
     print(f"wrote {SCHEMATIC.relative_to(ROOT)} and {BOM.relative_to(ROOT)}")
 

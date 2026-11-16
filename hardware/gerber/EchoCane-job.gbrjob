@@ -5,13 +5,13 @@
       "Application": "Pcbnew",
       "Version": "10.0.8"
     },
-    "CreationDate": "2026-11-15T23:51:10+00:00"
+    "CreationDate": "2026-11-16T00:38:17+00:00"
   },
   "GeneralSpecs": {
     "ProjectId": {
       "Name": "EchoCane",
       "GUID": "4563686f-4361-46e6-952e-6b696361645f",
-      "Revision": "rev?"
+      "Revision": "0.1"
     },
     "Size": {
       "X": 100.1,
