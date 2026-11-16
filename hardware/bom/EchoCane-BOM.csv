@@ -1,0 +1,17 @@
+Reference,Value,Footprint,Description,Qty
+A1,Arduino Nano v3.x,Module:Arduino_Nano,ATmega328P 5 V Arduino Nano module,1
+J1,HC-SR04,Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical,4-pin HC-SR04 ultrasonic sensor connector,1
+J2,Vibration motor,Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical,2-pin vibration motor connector,1
+Q1,PN2222A,Package_TO_SOT_THT:TO-92_Inline,"NPN low-side motor switch, TO-92",1
+R1,1k,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal,Base current limit resistor,1
+R2,10k,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal,Base pull-down resistor,1
+D1,1N4007,Diode_THT:D_DO-41_SOD81_P7.62mm_Horizontal,Flyback diode across the motor,1
+C1,100nF,Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm,"Motor supply decoupling, ceramic",1
+C2,10uF,Capacitor_THT:CP_Radial_D5.0mm_P2.00mm,Motor supply bulk capacitor,1
+SW1,MODE,Button_Switch_THT:SW_PUSH_6mm,"Mode push button, active low",1
+C3,100nF,Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm,Button hardware debounce capacitor,1
+R3,220,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal,Status LED series resistor,1
+D2,Green,LED_THT:LED_D5.0mm,"Status indicator LED, 5 mm",1
+R4,100,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal,Buzzer series resistor,1
+BZ1,Buzzer,Buzzer_Beeper:Buzzer_12x9.5RM7.6,5 V piezo buzzer,1
+H5-H6,1x15 2.54 mm socket header,Connector_PinSocket_2.54mm:PinSocket_1x15_P2.54mm_Vertical,Nano sockets (optional),2

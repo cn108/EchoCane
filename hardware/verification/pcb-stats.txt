@@ -1,0 +1,59 @@
+PCB statistics report
+=====================
+- Date: Sun Nov 15 23:51:12 2026
+- Project: EchoCane
+- Board name: EchoCane
+
+Board
+-----
+- Width: 100.0000 mm
+- Height: 85.0000 mm
+- Area: 8500.00 mm²
+- Front copper area: 348.139 mm²
+- Back copper area: 324.752 mm²
+- Min track clearance: 0.6200 mm
+- Min track width: 0.5000 mm
+- Min drill diameter: 0.7500 mm
+- Board stackup thickness: 1.6000 mm
+
+- Front footprint area: 1529.723 mm²
+- Back footprint area: 245.738 mm²
+- Front component density: 18.00 %
+- Back component density: 2.89 %
+Pads
+----
+- Through hole: 63
+- SMD: 0
+- Connector: 0
+- NPTH: 4
+- Castellated: 0
+- Press-fit: 0
+
+Vias
+----
+- Through vias: 0
+- Blind vias: 0
+- Buried vias: 0
+- Micro vias: 0
+
+Components
+----------
+
+|              | Front Side | Back Side | Total |
+|--------------|------------|-----------|-------|
+|THT:          |         15 |         0 |    15 |
+|SMD:          |          0 |         0 |     0 |
+|Unspecified:  |          4 |         0 |     4 |
+|Total:        |         19 |         0 |    19 |
+
+Drill holes
+-----------
+
+| Count | Shape |    X Size |    Y Size | Plated | Via/Pad | Start Layer | Stop Layer |
+|-------|-------|-----------|-----------|--------|---------|-------------|------------|
+|    38 | Round | 1.0000 mm | 1.0000 mm |    PTH |     Pad |        F.Cu |       B.Cu |
+|    14 | Round | 0.8000 mm | 0.8000 mm |    PTH |     Pad |        F.Cu |       B.Cu |
+|     6 | Round | 1.1000 mm | 1.1000 mm |    PTH |     Pad |        F.Cu |       B.Cu |
+|     4 | Round | 3.2000 mm | 3.2000 mm |   NPTH |     Pad |        F.Cu |       B.Cu |
+|     3 | Round | 0.7500 mm | 0.7500 mm |    PTH |     Pad |        F.Cu |       B.Cu |
+|     2 | Round | 0.9000 mm | 0.9000 mm |    PTH |     Pad |        F.Cu |       B.Cu |
